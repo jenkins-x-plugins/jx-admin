@@ -46,13 +46,13 @@ var (
 `)
 
 	cmdExample = templates.Examples(`
-		# installs the git operator with the given git clone URL
+		### installs the git operator with the given git clone URL
 		%s operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
 
-		# installs the git operator from inside a git clone 
+		### installs the git operator from inside a git clone 
 		%s operator --username mygituser --token mygittoken
 
-		# installs the git operator and prompt the user for missing information
+		### installs the git operator and prompt the user for missing information
 		%s operator 
 `)
 )
