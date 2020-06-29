@@ -83,10 +83,6 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "jx-git-operator", "the namespace to install the git operator")
-	command.Flags().StringVarP(&options.ReleaseName, "name", "", "jxgo", "the helm release name t ouse")
-	command.Flags().StringVarP(&options.ChartName, "chart", "c", defaultChartName, "the chart name to use to install the git operator")
-	command.Flags().StringVarP(&options.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
-	command.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
 
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
@@ -94,7 +90,16 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	}
 	command.PersistentFlags().BoolVarP(&options.BatchMode, "batch-mode", "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 
+	options.AddFlags(command)
+
 	return command, options
+}
+
+func (o *Options) AddFlags(command *cobra.Command) {
+	command.Flags().StringVarP(&o.ReleaseName, "name", "", "jxgo", "the helm release name t ouse")
+	command.Flags().StringVarP(&o.ChartName, "chart", "", defaultChartName, "the chart name to use to install the git operator")
+	command.Flags().StringVarP(&o.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
+	command.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
 }
 
 // Run installs the git operator chart

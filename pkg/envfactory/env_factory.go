@@ -35,6 +35,7 @@ type EnvFactory struct {
 	UseGitHubOAuth       bool
 	CreatedRepository    *CreateRepository
 	CreatedScmRepository *scm.Repository
+	UserAuth             *auth.UserAuth
 }
 
 // AddFlags adds common CLI flags
@@ -96,6 +97,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		Username: user.Login,
 		ApiToken: token,
 	}
+	o.UserAuth = userAuth
 	repo, err := cr.CreateRepository(scmClient)
 	if err != nil {
 		return err

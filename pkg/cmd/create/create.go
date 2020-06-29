@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jenkins-x/jx-remote/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/envfactory"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
@@ -38,6 +39,7 @@ const SupportHelm3ForDev = false
 // CreateOptions the options for creating a repository
 type CreateOptions struct {
 	envfactory.EnvFactory
+	Operator              operator.Options
 	DisableVerifyPackages bool
 	Requirements          config.RequirementsConfig
 	Flags                 reqhelpers.RequirementFlags
@@ -51,11 +53,16 @@ type CreateOptions struct {
 	Args                  []string
 	AddApps               []string
 	RemoveApps            []string
+	NoOperator            bool
 }
 
 // NewCmdCreate creates a command object for the command
 func NewCmdCreate() (*cobra.Command, *CreateOptions) {
 	o := &CreateOptions{}
+
+	// lets add defaults for the operator configuration
+	_, oo := operator.NewCmdOperator()
+	o.Operator = *oo
 
 	cmd := &cobra.Command{
 		Use:     "create",
@@ -79,10 +86,12 @@ func NewCmdCreate() (*cobra.Command, *CreateOptions) {
 	cmd.Flags().StringVarP(&o.RequirementsFile, "requirements", "r", "", "The 'jx-requirements.yml' file to use in the created development git repository. This file may be created via terraform")
 	cmd.Flags().StringArrayVarP(&o.AddApps, "add", "", nil, "The apps/charts to add to the `jx-apps.yml` file to add the apps")
 	cmd.Flags().StringArrayVarP(&o.RemoveApps, "remove", "", nil, "The apps/charts to remove from the `jx-apps.yml` file to remove the apps")
+	cmd.Flags().BoolVarP(&o.NoOperator, "no-operator", "", false, "If enabled then don't try to install the git operator after creating the git repository")
 
 	reqhelpers.AddRequirementsFlagsOptions(cmd, &o.Flags)
 	reqhelpers.AddRequirementsOptions(cmd, &o.Requirements)
 
+	o.Operator.AddFlags(cmd)
 	o.EnvFactory.AddFlags(cmd)
 	return cmd, o
 }
@@ -136,9 +145,24 @@ func (o *CreateOptions) Run() error {
 		return errors.Wrap(err, "failed to createt the environment git repository")
 	}
 	if o.DevGitURL != "" {
-		return o.createPullRequestOnDevRepository(o.DevGitURL, o.DevGitKind)
+		err = o.createPullRequestOnDevRepository(o.DevGitURL, o.DevGitKind)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create Pull Request on dev repository")
+		}
 	}
-	return nil
+	if o.NoOperator {
+		return nil
+	}
+	if !o.BatchMode {
+		flag, err := util.Confirm("do you want to install the git operator into the cluster?", true, "the jx-git-operator is used to install/upgrade the components in the cluster via GitOps", common.GetIOFileHandles(o.IOFileHandles))
+		if err != nil {
+			return errors.Wrapf(err, "failed to get confirmation of jx-git-operator install")
+		}
+		if !flag {
+			return nil
+		}
+	}
+	return o.installGitOperator()
 }
 
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
@@ -160,6 +184,7 @@ func (o *CreateOptions) gitCloneIfRequired(gitter gits.Gitter) (string, error) {
 			gitURL = common.DefaultEnvironmentHelmfileGitRepoURL
 		}
 	}
+	o.InitialGitURL = gitURL
 	var err error
 	dir := o.Dir
 	if dir != "" {
@@ -237,4 +262,24 @@ func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind str
 		}
 	}
 	return o.EnvFactory.CreatePullRequest(dir, gitURL, kind, "", commitTitle, commitBody)
+}
+
+func (o *CreateOptions) installGitOperator() error {
+	userAuth := o.EnvFactory.UserAuth
+	if userAuth == nil {
+		return errors.Errorf("no UserAuth was created for the environment git repository")
+	}
+	if o.Requirements.Cluster.Namespace != "" {
+		o.Operator.Namespace = o.Requirements.Cluster.Namespace
+	}
+	o.Operator.BatchMode = o.BatchMode
+	o.Operator.GitURL = o.InitialGitURL
+	o.Operator.GitUserName = userAuth.Username
+	o.Operator.GitToken = userAuth.ApiToken
+	err := o.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to install the git operator")
+	}
+	log.Logger().Infof("installed the git operator into namespace %s", util.ColorInfo(o.Operator.Namespace))
+	return nil
 }
