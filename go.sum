@@ -446,8 +446,8 @@ github.com/jenkins-x/go-scm v1.5.136 h1:y5fKDgGtSIX4tRyxEfiEV4gSH3cFKkOJs5+YU+Vn
 github.com/jenkins-x/go-scm v1.5.136/go.mod h1:PCT338UhP/pQ0IeEeMEf/hoLTYKcH7qjGEKd7jPkeYg=
 github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314 h1:kyBMx/ucSV92S+umX/V6DDaPNynlFFOM9MGJWApltoU=
 github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314/go.mod h1:C6j5HgwlHGjRU27W4XCs6jXksqYFo8OdBu+p44jqQeM=
-github.com/jenkins-x/helmboot v0.0.95 h1:KJ+UY1jWHJiUaxTeGjKzoTWoYL54p6KZSLjyPNbG8OE=
-github.com/jenkins-x/helmboot v0.0.95/go.mod h1:VhYEfvtons/OBqnYcFSDULjtzHx8Pt07nAL/cubxq3U=
+github.com/jenkins-x/jx-remote v0.0.95 h1:KJ+UY1jWHJiUaxTeGjKzoTWoYL54p6KZSLjyPNbG8OE=
+github.com/jenkins-x/jx-remote v0.0.95/go.mod h1:VhYEfvtons/OBqnYcFSDULjtzHx8Pt07nAL/cubxq3U=
 github.com/jenkins-x/jx v1.3.981-0.20200605070345-2c10fe601319 h1:ac6uSBIdf1XIenufKd2Y3sWTb/237AAHmMVantZMUoo=
 github.com/jenkins-x/jx v1.3.981-0.20200605070345-2c10fe601319/go.mod h1:dMUw5aJ5km/5kr6cAE0mpKZ0StUeh9cweUUFWMjKfbw=
 github.com/jenkins-x/jx v1.3.981-0.20200625050556-5ccee8e660bc h1:YstS6bJZfZnVD9osU5NRwhn9rMrauMyi/t3WxS6W39g=

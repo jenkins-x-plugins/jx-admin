@@ -2,17 +2,13 @@ module github.com/jenkins-x/jx-remote
 
 require (
 	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
-	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/cli/cli v0.6.2
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/genkiroid/cert v0.0.0-20191007122723-897560fbbe50
 	github.com/google/go-cmp v0.3.0
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/vault v1.1.2
 	github.com/heptio/sonobuoy v0.16.0
 	github.com/jenkins-x/go-scm v1.5.136
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
-	github.com/jenkins-x/helmboot v0.0.95
 	github.com/jenkins-x/jx v1.3.981-0.20200625050556-5ccee8e660bc
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/knative/serving v0.7.0

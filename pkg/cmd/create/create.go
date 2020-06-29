@@ -142,7 +142,7 @@ func (o *CreateOptions) Run() error {
 	}
 	err = o.EnvFactory.CreateDevEnvGitRepository(dir, o.Flags.EnvironmentGitPublic)
 	if err != nil {
-		return errors.Wrap(err, "failed to createt the environment git repository")
+		return errors.Wrap(err, "failed to create the environment git repository")
 	}
 	if o.DevGitURL != "" {
 		err = o.createPullRequestOnDevRepository(o.DevGitURL, o.DevGitKind)
