@@ -67,23 +67,50 @@ Installs the git operator in a cluster
 .SH EXAMPLE
 .RS
 .IP \(bu 2
-
 installs the git operator with the given git clone URL
+
+.br
 
 .RE
 
 .PP
-jx\-alpha\-remote operator \-\-url https://$GIT USERNAME:$GIT TOKEN@github.com/myorg/environment\-mycluster\-dev.git
-  *
+.RS
+
+.nf
+  jx\-alpha\-remote operator \-\-url https://$GIT\_USERNAME:$GIT\_TOKEN@github.com/myorg/environment\-mycluster\-dev.git
+
+.fi
+.RE
+
+.RS
+.IP \(bu 2
 installs the git operator from inside a git clone
 
-.PP
-jx\-alpha\-remote operator \-\-username mygituser \-\-token mygittoken
-  *
-installs the git operator and prompt the user for missing information
+.br
+
+.RE
 
 .PP
-jx\-alpha\-remote operator
+.RS
+
+.nf
+  jx\-alpha\-remote operator \-\-username mygituser \-\-token mygittoken
+
+.fi
+.RE
+
+.RS
+.IP \(bu 2
+installs the git operator and prompt the user for missing information
+
+.br
+
+.RE
+
+.PP
+\fB\fCbash
+  jx\-alpha\-remote operator
+\fR%!(EXTRA string=jx\-alpha\-remote, string=jx\-alpha\-remote, string=jx\-alpha\-remote)
 
 
 .SH SEE ALSO

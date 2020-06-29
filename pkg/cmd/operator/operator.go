@@ -45,20 +45,20 @@ var (
 
 `)
 
-	cmdExample = templates.LongDesc(`
+	cmdExample = templates.Examples(`
 * installs the git operator with the given git clone URL
-
-    %s operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
-
+` + bashExample("operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git") + `
 * installs the git operator from inside a git clone 
-
-    %s operator --username mygituser --token mygittoken
-	
+` + bashExample("operator --username mygituser --token mygittoken") + `
 * installs the git operator and prompt the user for missing information
-
-    %s operator 
+` + bashExample("operator") + `
 `)
 )
+
+// bashExample returns markdown for a bash script expression
+func bashExample(cli string) string {
+	return fmt.Sprintf("\n```bash \n%s %s\n```\n", rootcmd.BinaryName, cli)
+}
 
 const (
 	defaultChartName = "jx-labs/jx-git-operator"
