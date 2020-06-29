@@ -45,7 +45,7 @@ var (
 
 `)
 
-	cmdExample = templates.Examples(`
+	cmdExample = templates.LongDesc(`
 * installs the git operator with the given git clone URL
 
     %s operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
