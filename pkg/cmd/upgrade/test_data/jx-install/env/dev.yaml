@@ -1,0 +1,44 @@
+apiVersion: jenkins.io/v1
+kind: Environment
+metadata:
+  annotations:
+    jenkins.io/chart: env
+  labels:
+    env: dev
+    jenkins.io/chart-release: jenkins-x
+    jenkins.io/namespace: jx
+    jenkins.io/version: "1"
+    team: jx
+  name: dev
+spec:
+  kind: Development
+  label: Development
+  namespace: jx
+  previewGitInfo:
+    user: {}
+  promotionStrategy: Never
+  teamSettings:
+    appsRepository: http://chartmuseum.jenkins-x.io
+    buildPackName: kubernetes-workloads
+    buildPackRef: master
+    buildPackUrl: https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git
+    defaultScheduler:
+      apiVersion: jenkins.io/v1
+      kind: Scheduler
+      name: default-scheduler
+    dockerRegistryOrg: myorg
+    envOrganisation: myorg
+    gitPublic: true
+    gitServer: https://github.com
+    helmTemplate: true
+    importMode: YAML
+    kubeProvider: ""
+    pipelineUserEmail: jenkins-x-bot@googlegroups.com
+    pipelineUsername: tekton-bot
+    promotionEngine: Prow
+    prowConfig: Scheduler
+    prowEngine: Tekton
+    useGitOps: true
+    versionStreamRef: master
+    versionStreamUrl: https://github.com/jenkins-x/jenkins-x-versions.git
+  webHookEngine: Lighthouse

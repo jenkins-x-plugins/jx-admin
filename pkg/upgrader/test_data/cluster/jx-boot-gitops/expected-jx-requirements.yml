@@ -1,0 +1,94 @@
+autoUpdate:
+  enabled: true
+  schedule: 0 0 * * *
+bootConfigURL: https://github.com/jenkins-x/jenkins-x-boot-config.git
+cluster:
+  clusterName: myclustername
+  environmentGitOwner: myorg
+  environmentGitPublic: true
+  gitKind: github
+  gitName: github
+  gitPublic: true
+  gitServer: https://github.com
+  namespace: jx
+  project: myproject
+  provider: gke
+  registry: gcr.io
+  zone: us-east1-c
+environments:
+- gitKind: github
+  gitServer: https://github.com
+  ingress:
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: ""
+    tls:
+      email: ""
+      enabled: false
+      production: false
+  key: dev
+  owner: myorg
+  promotionStrategy: Never
+  repository: environment-mycluster-dev
+- gitKind: github
+  gitServer: https://github.com
+  ingress:
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: ""
+    tls:
+      email: ""
+      enabled: false
+      production: false
+  key: staging
+  owner: myorg
+  promotionStrategy: Auto
+  repository: environment-mycluster-staging
+- gitKind: github
+  gitServer: https://github.com
+  ingress:
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: ""
+    tls:
+      email: ""
+      enabled: false
+      production: false
+  key: production
+  owner: myorg
+  promotionStrategy: Manual
+  repository: environment-mycluster-production
+gitops: true
+helmfile: true
+ingress:
+  domain: myorg.com
+  externalDNS: false
+  namespaceSubDomain: -jx.
+  tls:
+    email: ""
+    enabled: false
+    production: false
+kaniko: true
+repository: nexus
+secretStorage: vault
+storage:
+  backup:
+    enabled: false
+    url: ""
+  logs:
+    enabled: false
+    url: ""
+  reports:
+    enabled: false
+    url: ""
+  repository:
+    enabled: false
+    url: ""
+vault: {}
+velero:
+  schedule: ""
+  ttl: ""
+versionStream:
+  ref: master
+  url: https://github.com/jenkin-x/jenkins-x-versions.git
+webhook: lighthouse

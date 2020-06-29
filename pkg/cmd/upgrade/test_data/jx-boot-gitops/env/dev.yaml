@@ -1,0 +1,80 @@
+apiVersion: jenkins.io/v1
+kind: Environment
+metadata:
+  annotations:
+    jenkins.io/chart: env
+  labels:
+    env: dev
+    jenkins.io/chart-release: jenkins-x
+    jenkins.io/namespace: jx
+    jenkins.io/version: "1"
+    team: jx
+  name: dev
+spec:
+  kind: Development
+  label: Development
+  namespace: jx
+  previewGitInfo:
+    user: {}
+  promotionStrategy: Never
+  source:
+    ref: master
+    url: https://github.com/jstrachan/environment-jstrachan-cb6-dev.git
+  teamSettings:
+    appsRepository: http://chartmuseum.jenkins-x.io
+    bootRequirements: |
+      autoUpdate:
+        enabled: true
+        schedule: 0 0 * * *
+      bootConfigURL: https://github.com/jenkins-x/jenkins-x-boot-config.git
+      cluster:
+        clusterName: myclustername
+        environmentGitOwner: myorg
+        environmentGitPublic: true
+        gitKind: fake
+        gitName: fake
+        gitPublic: true
+        gitServer: https://fake.com
+        namespace: jx
+        project: myproject
+        provider: gke
+        registry: gcr.io
+        zone: us-east1-c
+      environments:
+      - key: dev
+      - key: staging
+      - key: production
+      gitops: true
+      ingress:
+        domain: myorg.com
+        namespaceSubDomain: -jx.
+      kaniko: true
+      repository: nexus
+      secretStorage: vault
+      versionStream:
+        ref: master
+        url: https://github.com/jenkin-x/jenkins-x-versions.git
+      webhook: lighthouse
+    buildPackName: kubernetes-workloads
+    buildPackRef: master
+    buildPackUrl: https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git
+    defaultScheduler:
+      apiVersion: jenkins.io/v1
+      kind: Scheduler
+      name: default-scheduler
+    dockerRegistryOrg: myorg
+    envOrganisation: myorg
+    gitPublic: true
+    gitServer: https://github.com
+    helmTemplate: true
+    importMode: YAML
+    kubeProvider: ""
+    pipelineUserEmail: jenkins-x-bot@googlegroups.com
+    pipelineUsername: tekton-bot
+    promotionEngine: Prow
+    prowConfig: Scheduler
+    prowEngine: Tekton
+    useGitOps: true
+    versionStreamRef: master
+    versionStreamUrl: https://github.com/jenkins-x/jenkins-x-versions.git
+  webHookEngine: Lighthouse

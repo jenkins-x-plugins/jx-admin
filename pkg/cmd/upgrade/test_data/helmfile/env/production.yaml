@@ -1,0 +1,22 @@
+apiVersion: jenkins.io/v1
+kind: Environment
+metadata:
+  annotations:
+    jenkins.io/chart: env
+  labels:
+    jenkins.io/chart-release: jenkins-x
+    jenkins.io/namespace: jx
+    jenkins.io/version: "1"
+  name: production
+spec:
+  kind: Permanent
+  label: Production
+  namespace: jx-production
+  order: 200
+  previewGitInfo:
+    user: {}
+  promotionStrategy: Manual
+  remote: false
+  source:
+    ref: master
+    url: https://github.com/myorg/environment-mycluster-production.git
