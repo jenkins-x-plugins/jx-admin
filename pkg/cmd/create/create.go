@@ -5,20 +5,20 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/envfactory"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -221,7 +221,7 @@ func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind str
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements file in git clone of %s in  directory: %s", gitURL, dir)
 	}

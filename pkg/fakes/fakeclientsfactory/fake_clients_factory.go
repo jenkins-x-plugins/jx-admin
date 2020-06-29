@@ -3,32 +3,33 @@ package fakeclientsfactory
 import (
 	"github.com/heptio/sonobuoy/pkg/client"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
-	"github.com/jenkins-x/jx/pkg/kustomize"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/kustomize"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/client-go/kubernetes"
 
 	"k8s.io/client-go/dynamic"
 
 	"io"
 
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/table"
 	"k8s.io/client-go/rest"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
+	kserve "knative.dev/serving/pkg/client/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 
@@ -113,8 +114,12 @@ func (f *fakeClientsFactory) CreateSystemVaultClient(namespace string) (vault.Cl
 	return f.defaultFactory.CreateSystemVaultClient(namespace)
 }
 
-func (f *fakeClientsFactory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
-	return f.defaultFactory.CreateVaultClient(name, namespace)
+func (f *fakeClientsFactory) CreateExternalVaultClient(vaultConfig vault.Vault, kubeClient kubernetes.Interface) (vault.Client, error) {
+	return f.defaultFactory.CreateExternalVaultClient(vaultConfig, kubeClient)
+}
+
+func (f *fakeClientsFactory) CreateInternalVaultClient(name string, namespace string) (vault.Client, error) {
+	return f.defaultFactory.CreateInternalVaultClient(name, namespace)
 }
 
 func (f *fakeClientsFactory) CreateHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer {
@@ -147,6 +152,10 @@ func (f *fakeClientsFactory) CreateMetricsClient() (metricsclient.Interface, err
 
 func (f *fakeClientsFactory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	return f.jxf.CreateTektonClient()
+}
+
+func (f *fakeClientsFactory) CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error) {
+	return f.jxf.CreateTektonPipelineResourceClient()
 }
 
 func (f *fakeClientsFactory) CreateProwJobClient() (prowjobclient.Interface, string, error) {

@@ -6,20 +6,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/helmer"
 	"github.com/jenkins-x/jx-remote/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
-	"github.com/jenkins-x/jx-remote/pkg/versions"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -200,22 +196,25 @@ func (o *Options) Git() gits.Gitter {
 }
 
 func (o *Options) findChartVersion(req *config.RequirementsConfig) (string, error) {
-	if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {
-		// relative chart folder so ignore version
-		return "", nil
-	}
+	/*
+		if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {
+			// relative chart folder so ignore version
+			return "", nil
+		}
 
-	f := clients.NewFactory()
-	co := opts.NewCommonOptionsWithTerm(f, os.Stdin, os.Stdout, os.Stderr)
-	co.BatchMode = o.BatchMode
+		f := clients.NewFactory()
+		co := opts.NewCommonOptionsWithTerm(f, os.Stdin, os.Stdout, os.Stderr)
+		co.BatchMode = o.BatchMode
 
-	u := req.VersionStream.URL
-	ref := req.VersionStream.Ref
-	version, err := versions.GetVersionNumber(versionstream.KindChart, o.ChartName, u, ref, o.Git(), co.GetIOFileHandles())
-	if err != nil {
-		return version, errors.Wrapf(err, "failed to find version of chart %s in version stream %s ref %s", o.ChartName, u, ref)
-	}
-	return version, nil
+		u := req.VersionStream.URL
+		ref := req.VersionStream.Ref
+		version, err := versions.GetVersionNumber(versionstream.KindChart, o.ChartName, u, ref, o.Git(), co.GetIOFileHandles())
+		if err != nil {
+			return version, errors.Wrapf(err, "failed to find version of chart %s in version stream %s ref %s", o.ChartName, u, ref)
+		}
+		return version, nil
+	*/
+	return "", nil
 }
 
 func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
@@ -223,7 +222,7 @@ func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
 	if err != nil {
 		return gitURL, errors.Wrapf(err, "failed to parse git URL")
 	}
-	answer := gitInfo.HttpCloneURL()
+	answer := gitInfo.HttpsURL()
 
 	u, err := url.Parse(answer)
 	if err != nil {

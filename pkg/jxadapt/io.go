@@ -3,7 +3,7 @@ package jxadapt
 import (
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // ToIOHandles handles lazily creating the IO handles if they are nil

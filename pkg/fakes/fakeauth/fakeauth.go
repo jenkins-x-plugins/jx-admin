@@ -3,7 +3,7 @@ package fakeauth
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/stretchr/testify/require"
 )
 

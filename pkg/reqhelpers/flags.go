@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +25,6 @@ func AddRequirementsFlagsOptions(cmd *cobra.Command, flags *RequirementFlags) {
 	cmd.Flags().BoolVarP(&flags.HPA, "hpa", "", false, "enables HPA deployment of apps by default")
 	cmd.Flags().BoolVarP(&flags.TLS, "tls", "", false, "enable TLS for Ingress")
 	cmd.Flags().StringVarP(&flags.Repository, "repository", "", "", "the artifact repository. Possible values are: "+strings.Join(config.RepositoryTypeValues, ", "))
-	cmd.Flags().StringVarP(&flags.IngressKind, "ingress-kind", "", "", "configures the kind of ingress used (e.g. whether to use Ingress or VirtualService resources. Possible values: "+strings.Join(config.IngressTypeValues, ", "))
 	cmd.Flags().StringVarP(&flags.SecretStorage, "secret", "", "", "configures the secret storage kind. Possible values: "+strings.Join(config.SecretStorageTypeValues, ", "))
 }
 
@@ -52,9 +51,6 @@ func AddRequirementsOptions(cmd *cobra.Command, r *config.RequirementsConfig) {
 
 	// ingress
 	cmd.Flags().StringVarP(&r.Ingress.Domain, "domain", "d", "", "configures the domain name")
-	cmd.Flags().StringVarP(&r.Ingress.Namespace, "ingress-namespace", "", "", "configures the service kind. e.g. specify NodePort unless you want to use the default LoadBalancer")
-	cmd.Flags().StringVarP(&r.Ingress.Service, "ingress-service", "", "", "configures the ingress service name when no ingress domain is specified and we need to detect the LoadBalancer IP")
-	cmd.Flags().StringVarP(&r.Ingress.ServiceType, "service-type", "", "", "the Ingress controller Service Type such as NodePort if using on premise and you do not have a LoadBalancer service type support")
 	cmd.Flags().StringVarP(&r.Ingress.TLS.Email, "tls-email", "", "", "the TLS email address to enable TLS on the domain")
 	cmd.Flags().BoolVarP(&r.Ingress.TLS.Production, "tls-production", "", true, "the LetsEncrypt production service, defaults to true, set to false to use the Staging service")
 	cmd.Flags().StringVarP(&r.Ingress.TLS.SecretName, "tls-secret", "", "", "[optional] the custom Kubernetes Secret name for the TLS certificate")

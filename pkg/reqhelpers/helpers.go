@@ -5,17 +5,18 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jenkins-x/jx-apps/pkg/jxapps"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/common"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -137,7 +138,7 @@ func GetRequirementsFromGit(gitURL string) (*config.RequirementsConfig, error) {
 		return nil, errors.Wrapf(err, "failed to git clone %s to dir %s", gitURL, tempDir)
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(tempDir)
+	requirements, _, err := config.LoadRequirementsConfig(tempDir, false)
 	if err != nil {
 		return requirements, errors.Wrapf(err, "failed to requirements YAML file from %s", tempDir)
 	}
@@ -146,7 +147,7 @@ func GetRequirementsFromGit(gitURL string) (*config.RequirementsConfig, error) {
 
 // OverrideRequirements allows CLI overrides
 func OverrideRequirements(cmd *cobra.Command, args []string, dir string, customRequirementsFile string, outputRequirements *config.RequirementsConfig, flags *RequirementFlags, environment string) error {
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return err
 	}
@@ -159,7 +160,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir string, customR
 		if !exists {
 			return fmt.Errorf("custom requirements file %s does not exist", customRequirementsFile)
 		}
-		requirements, err = config.LoadRequirementsConfigFile(customRequirementsFile)
+		requirements, err = config.LoadRequirementsConfigFile(customRequirementsFile, false)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load: %s", customRequirementsFile)
 		}
@@ -224,9 +225,11 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir string, customR
 	}
 
 	// lets default an ingress service type if there is none
+	/* TODO
 	if outputRequirements.Ingress.ServiceType == "" {
 		outputRequirements.Ingress.ServiceType = "LoadBalancer"
 	}
+	*/
 
 	if outputRequirements.VersionStream.URL == "" {
 		outputRequirements.VersionStream.URL = common.DefaultVersionsURL
@@ -252,12 +255,12 @@ func UpgradeExistingRequirements(requirements *config.RequirementsConfig) {
 }
 
 // ValidateApps validates the apps match the requirements
-func ValidateApps(dir string, addApps []string, removeApps []string) (*config.AppConfig, string, error) {
-	requirements, _, err := config.LoadRequirementsConfig(dir)
+func ValidateApps(dir string, addApps []string, removeApps []string) (*jxapps.AppConfig, string, error) {
+	requirements, _, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return nil, "", err
 	}
-	apps, appsFileName, err := config.LoadAppConfig(dir)
+	apps, appsFileName, err := jxapps.LoadAppConfig(dir)
 
 	modified := false
 	if requirements.Repository != config.RepositoryTypeNexus {
@@ -274,6 +277,7 @@ func ValidateApps(dir string, addApps []string, removeApps []string) (*config.Ap
 		}
 	}
 
+	/* TODO
 	if requirements.Ingress.Kind == config.IngressTypeIstio {
 		if removeApp(apps, "stable/nginx-ingress", appsFileName) {
 			modified = true
@@ -282,6 +286,7 @@ func ValidateApps(dir string, addApps []string, removeApps []string) (*config.Ap
 			modified = true
 		}
 	}
+	*/
 
 	if requirements.Cluster.Provider == cloud.KUBERNETES {
 		if addApp(apps, "stable/docker-registry", "jenkins-x/jxboot-helmfile-resources", appsFileName) {
@@ -324,7 +329,7 @@ func shouldHaveCertManager(requirements *config.RequirementsConfig) bool {
 	return requirements.Ingress.TLS.Enabled && requirements.Ingress.TLS.SecretName == ""
 }
 
-func addApp(apps *config.AppConfig, chartName string, beforeName, appsFileName string) bool {
+func addApp(apps *jxapps.AppConfig, chartName string, beforeName, appsFileName string) bool {
 	idx := -1
 	for i, a := range apps.Apps {
 		switch a.Name {
@@ -334,11 +339,11 @@ func addApp(apps *config.AppConfig, chartName string, beforeName, appsFileName s
 			idx = i
 		}
 	}
-	app := config.App{Name: chartName}
+	app := jxapps.App{Name: chartName}
 
 	// if we have a repositories chart lets add apps before that
 	if idx >= 0 {
-		newApps := append([]config.App{app}, apps.Apps[idx:]...)
+		newApps := append([]jxapps.App{app}, apps.Apps[idx:]...)
 		apps.Apps = append(apps.Apps[0:idx], newApps...)
 	} else {
 		apps.Apps = append(apps.Apps, app)
@@ -347,7 +352,7 @@ func addApp(apps *config.AppConfig, chartName string, beforeName, appsFileName s
 	return true
 }
 
-func removeApp(apps *config.AppConfig, chartName, appsFileName string) bool {
+func removeApp(apps *jxapps.AppConfig, chartName, appsFileName string) bool {
 	for i, a := range apps.Apps {
 		if a.Name == chartName {
 			apps.Apps = append(apps.Apps[0:i], apps.Apps[i+1:]...)
@@ -387,6 +392,7 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	if FlagChanged(cmd, "tls") {
 		r.Ingress.TLS.Enabled = flags.TLS
 	}
+	/* TODO
 	if FlagChanged(cmd, "canary") {
 		if r.DeployOptions == nil {
 			r.DeployOptions = &v1.DeployOptions{}
@@ -399,12 +405,14 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 		}
 		r.DeployOptions.HPA = flags.HPA
 	}
+	if flags.IngressKind != "" {
+		r.Ingress.Kind = config.IngressType(flags.IngressKind)
+	}
+
+	*/
 
 	if flags.Repository != "" {
 		r.Repository = config.RepositoryType(flags.Repository)
-	}
-	if flags.IngressKind != "" {
-		r.Ingress.Kind = config.IngressType(flags.IngressKind)
 	}
 	if flags.SecretStorage != "" {
 		r.SecretStorage = config.SecretStorageType(flags.SecretStorage)
@@ -496,7 +504,7 @@ func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string,
 		}
 	}
 	if requirements == nil {
-		requirements, _, err = config.LoadRequirementsConfig(dir)
+		requirements, _, err = config.LoadRequirementsConfig(dir, false)
 		if err != nil {
 			return requirements, gitURL, err
 		}

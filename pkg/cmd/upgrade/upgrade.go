@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/envfactory"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
@@ -16,21 +17,21 @@ import (
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
 	"github.com/jenkins-x/jx-remote/pkg/upgrader"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/versionstream"
-	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+
+	"github.com/jenkins-x/jx-promote/pkg/versionstream"
+	"github.com/jenkins-x/jx-promote/pkg/versionstream/versionstreamrepo"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -158,7 +159,7 @@ func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
 	}
 	o.OutDir = dir
 
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements from dir %s", dir)
 	}

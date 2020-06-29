@@ -2,10 +2,10 @@ package upgrader
 
 import (
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 )
 
 // HelmfileUpgrader moves an existing cluster to the new helmfile / helm 3 GitOps source

@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx-remote/pkg/upgrader"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 )
@@ -60,7 +60,7 @@ func TestHelmfileUpgradeFromCluster(t *testing.T) {
 		expectedRequirementsFile := filepath.Join(testDir, "expected-jx-requirements.yml")
 		require.FileExists(t, expectedRequirementsFile, "no expected requirements file for test %s", name)
 
-		_, err = config.LoadRequirementsConfigFile(expectedRequirementsFile)
+		_, err = config.LoadRequirementsConfigFile(expectedRequirementsFile, true)
 		require.NoError(t, err, "failed to validate %s", expectedRequirementsFile)
 
 		want, err := ioutil.ReadFile(expectedRequirementsFile)

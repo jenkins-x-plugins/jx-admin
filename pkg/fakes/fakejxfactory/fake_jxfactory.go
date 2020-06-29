@@ -1,10 +1,10 @@
 package fakejxfactory
 
 import (
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	v1fake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -15,15 +15,17 @@ import (
 
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // FakeFactory represents a fake factory
 type FakeFactory struct {
-	KubeClient   kubernetes.Interface
-	JXClient     versioned.Interface
-	TektonClient tektonclient.Interface
-	Namespace    string
+	KubeClient                   kubernetes.Interface
+	JXClient                     versioned.Interface
+	TektonClient                 tektonclient.Interface
+	TektonPipelineResourceClient resourceclient.Interface
+	Namespace                    string
 }
 
 // NewFakeFactory returns a fake factory for testing
@@ -75,6 +77,10 @@ func (f *FakeFactory) CreateJXClient() (versioned.Interface, string, error) {
 
 func (f *FakeFactory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	return f.TektonClient, f.Namespace, nil
+}
+
+func (f *FakeFactory) CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error) {
+	return f.TektonPipelineResourceClient, f.Namespace, nil
 }
 
 func (f *FakeFactory) KubeConfig() kube.Kuber {

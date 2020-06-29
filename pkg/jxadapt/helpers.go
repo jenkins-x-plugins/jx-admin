@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx-remote/pkg/fakes/fakeclientsfactory"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
 )
 
 // JXAdapter an adapter between new clean code and the classic CommonOptions abstractions in jx

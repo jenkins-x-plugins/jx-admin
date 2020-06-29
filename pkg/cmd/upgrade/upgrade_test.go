@@ -13,8 +13,8 @@ import (
 	"github.com/jenkins-x/jx-remote/pkg/fakes/fakegit"
 	"github.com/jenkins-x/jx-remote/pkg/fakes/fakejxfactory"
 	"github.com/jenkins-x/jx-remote/pkg/testhelpers"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,12 +103,12 @@ func TestUpgrade(t *testing.T) {
 
 		dir := uo.OutDir
 		assert.NotEmpty(t, dir, "no output dir generated")
-		_, actualReqFile, err := config.LoadRequirementsConfig(dir)
+		_, actualReqFile, err := config.LoadRequirementsConfig(dir, false)
 		assert.NoError(t, err, "failed to load generated requirements in dir %s for %s", dir, name)
 		assert.NotEmpty(t, actualReqFile, "no requirements file found for test %s in output dir %s", dir)
 
 		expectedFile := filepath.Join(testDir, "expected-jx-requirements.yml")
-		_, err = config.LoadRequirementsConfigFile(expectedFile)
+		_, err = config.LoadRequirementsConfigFile(expectedFile, false)
 		assert.NoError(t, err, "failed to load expected requirements file %s for %s", expectedFile, name)
 		assert.FileExists(t, expectedFile, "expected requirements file for test %s", name)
 

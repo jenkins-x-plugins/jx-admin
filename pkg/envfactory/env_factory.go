@@ -7,17 +7,17 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/authhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
 	"github.com/jenkins-x/jx-remote/pkg/jxadapt"
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jxfactory"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +50,7 @@ func (o *EnvFactory) AddFlags(cmd *cobra.Command) {
 // CreateDevEnvGitRepository creates the dev environment git repository from the given directory
 func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error {
 	o.OutDir = dir
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements from %s", dir)
 	}
