@@ -14,13 +14,13 @@ Installs the git operator in a cluster
 
 ### Examples
 
-  ### installs the git operator with the given git clone URL
+  * installs the git operator with the given git clone URL
   jx-alpha-remote operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
   
-  ### installs the git operator from inside a git clone
+  * installs the git operator from inside a git clone
   jx-alpha-remote operator --username mygituser --token mygittoken
   
-  ### installs the git operator and prompt the user for missing information
+  * installs the git operator and prompt the user for missing information
   jx-alpha-remote operator
 
 ### Options
