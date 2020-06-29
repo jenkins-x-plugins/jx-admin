@@ -2,22 +2,15 @@ package operator
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/helmboot/pkg/apis/boot/v1alpha1"
-	"github.com/jenkins-x/helmboot/pkg/bootconfig"
 	"github.com/jenkins-x/helmboot/pkg/common"
 	"github.com/jenkins-x/helmboot/pkg/helmer"
 	"github.com/jenkins-x/helmboot/pkg/plugins/helmplugin"
-	"github.com/jenkins-x/helmboot/pkg/reqhelpers"
 	"github.com/jenkins-x/helmboot/pkg/rootcmd"
-	"github.com/jenkins-x/helmboot/pkg/secretmgr"
-	"github.com/jenkins-x/helmboot/pkg/secretmgr/factory"
 	"github.com/jenkins-x/helmboot/pkg/versions"
-	"github.com/jenkins-x/jx/pkg/cmd/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -33,18 +26,17 @@ import (
 
 // Options contains the command line arguments for this command
 type Options struct {
-	boot.BootOptions
-	KindResolver    factory.KindResolver
-	Gitter          gits.Gitter
-	ChartName       string
-	ChartVersion    string
-	ImageRepository string
-	ImageTag        string
-	GitUserName     string
-	GitToken        string
-	BatchMode       bool
-	JobMode         bool
-	NoTail          bool
+	Dir          string
+	GitURL       string
+	GitUserName  string
+	GitToken     string
+	Namespace    string
+	ReleaseName  string
+	ChartName    string
+	ChartVersion string
+	DryRun       bool
+	BatchMode    bool
+	Gitter       gits.Gitter
 }
 
 var (
@@ -54,12 +46,14 @@ var (
 `)
 
 	cmdExample = templates.Examples(`
-		# installs the git operator
-		%s operator 
-
 		# installs the git operator with the given git clone URL
-		%s run --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
+		%s operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
 
+		# installs the git operator from inside a git clone 
+		%s operator --username mygituser --token mygittoken
+
+		# installs the git operator and prompt the user for missing information
+		%s operator 
 `)
 )
 
@@ -74,28 +68,22 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 		Use:     "operator",
 		Short:   "installs the git operator in a cluster",
 		Long:    cmdLong,
-		Example: fmt.Sprintf(cmdExample, rootcmd.BinaryName, rootcmd.BinaryName),
+		Example: fmt.Sprintf(cmdExample, rootcmd.BinaryName, rootcmd.BinaryName, rootcmd.BinaryName),
 		Run: func(command *cobra.Command, args []string) {
 			common.SetLoggingLevel(command, args)
 			err := options.Run()
 			helper.CheckErr(err)
 		},
 	}
-	command.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to look for the Jenkins X Pipeline, requirements and charts")
-	command.Flags().StringVarP(&options.GitURL, "git-url", "u", "", "override the Git clone URL for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-ref as well")
-	command.Flags().StringVarP(&options.GitUserName, "git-user", "", "", "specify the git user name to clone the development git repository. If not specified it is found from the secrets at $JX_SECRETS_YAML")
-	command.Flags().StringVarP(&options.GitToken, "git-token", "", "", "specify the git token to clone the development git repository. If not specified it is found from the secrets at $JX_SECRETS_YAML")
-	command.Flags().StringVarP(&options.GitRef, "git-ref", "", "master", "override the Git ref for the JX Boot source to start from, ignoring the versions stream. Normally specified with git-url as well")
-	command.Flags().StringVarP(&options.ChartName, "chart", "c", defaultChartName, "the chart name to use to install the boot Job")
-	command.Flags().StringVarP(&options.ChartVersion, "chart-version", "", "", "override the helm chart version used for the boot Job")
-	command.Flags().StringVarP(&options.ImageRepository, "image-repository", "", "", "override the default docker image repository used by the boot job")
-	command.Flags().StringVarP(&options.ImageTag, "image-tag", "", "", "override the default docker image tag used by the boot job")
-	command.Flags().StringVarP(&options.VersionStreamURL, "versions-repo", "", common.DefaultVersionsURL, "the bootstrap URL for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yml")
-	command.Flags().StringVarP(&options.VersionStreamRef, "versions-ref", "", common.DefaultVersionsRef, "the bootstrap ref for the versions repo. Once the boot config is cloned, the repo will be then read from the jx-requirements.yml")
-	command.Flags().StringVarP(&options.HelmLogLevel, "helm-log", "v", "", "sets the helm logging level from 0 to 9. Passed into the helm CLI via the '-v' argument. Useful to diagnose helm related issues")
-	command.Flags().StringVarP(&options.RequirementsFile, "requirements", "r", "", "requirements file which will overwrite the default requirements file")
-	command.Flags().BoolVarP(&options.NoTail, "no-tail", "", false, "disables tailing the boot logs")
-	command.Flags().BoolVarP(&options.JobMode, "job", "", false, "if running inside the cluster lets still default to creating the boot Job rather than running boot locally")
+	command.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to discover the git URL if no url option is specified")
+	command.Flags().StringVarP(&options.GitURL, "url", "u", "", "the git URL for the environment to boot using the operator. This is optional - the git operator Secret can be created later")
+	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
+	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
+	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "jx-git-operator", "the namespace to install the git operator")
+	command.Flags().StringVarP(&options.ReleaseName, "name", "", "jxgo", "the helm release name t ouse")
+	command.Flags().StringVarP(&options.ChartName, "chart", "c", defaultChartName, "the chart name to use to install the git operator")
+	command.Flags().StringVarP(&options.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
+	command.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
 
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
@@ -108,44 +96,28 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 
 // Run installs the git operator chart
 func (o *Options) Run() error {
-	err := o.detectGitURL()
-	if err != nil {
-		return err
+	if o.GitUserName == "" {
+		o.GitUserName = os.Getenv("GIT_USERNAME")
 	}
-	requirements, gitURL, err := reqhelpers.FindRequirementsAndGitURL(o.KindResolver.GetFactory(), o.GitURL, o.Git(), o.Dir)
-	if err != nil {
-		return err
+	if o.GitToken == "" {
+		o.GitToken = os.Getenv("GIT_TOKEN")
 	}
-	if gitURL == "" {
-		return util.MissingOption("url")
+	var err error
+	if o.GitURL == "" {
+		o.GitURL, err = findGitURLFromDir(o.Git(), o.Dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to detect the git URL from the directory %s", o.Dir)
+		}
 	}
-
-	bootConfig, _, err := bootconfig.LoadBoot(o.Dir, false)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load boot config in dir %s", o.Dir)
+	if o.GitURL != "" {
+		o.GitURL, err = o.ensureHttpsURL(o.GitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to ensure the git URL is a HTTPS UrL")
+		}
 	}
-
-	token, err := o.addUserPasswordForPrivateGitClone(bootConfig, false)
-	if err != nil {
-		return errors.Wrapf(err, "could not default the git user and token to clone the git URL")
-	}
-
-	clusterName := requirements.Cluster.ClusterName
-	log.Logger().Infof("running the Boot Job for cluster %s with git URL %s", util.ColorInfo(clusterName), util.ColorInfo(util.SanitizeURL(gitURL)))
-
 	helmBin, err := helmplugin.GetHelm3Binary()
 	if err != nil {
 		return err
-	}
-
-	log.Logger().Debug("deleting the old jx-boot chart ...")
-	c := util.Command{
-		Name: helmBin,
-		Args: []string{"delete", "jx-boot"},
-	}
-	_, err = c.RunWithoutRetry()
-	if err != nil {
-		log.Logger().Debugf("failed to delete the old jx-boot chart: %s", err.Error())
 	}
 
 	// lets add helm repository for jx-labs
@@ -160,20 +132,14 @@ func (o *Options) Run() error {
 		log.Logger().Warnf("failed to update helm repositories: %s", err.Error())
 	}
 
-	if o.ChartVersion == "" {
-		o.ChartVersion, err = o.findChartVersion(requirements)
-		if err != nil {
-			return err
-		}
-	}
-
-	c = o.getCommandLine(helmBin, gitURL)
+	c := o.getCommandLine(helmBin, o.GitURL)
 
 	// lets sanitize and format the command line so it looks nicer in the console output
 	// TODO replace with c.CLI() when we switch to jx-helpers
 	commandLine := fmt.Sprintf("%s %s", c.Name, strings.Join(c.Args, " "))
-	if token == "" {
-		u, err := url.Parse(gitURL)
+	token := ""
+	if o.GitURL != "" {
+		u, err := url.Parse(o.GitURL)
 		if err == nil && u.User != nil {
 			token, _ = u.User.Password()
 		}
@@ -181,11 +147,15 @@ func (o *Options) Run() error {
 	if token != "" {
 		commandLine = strings.ReplaceAll(commandLine, token, "****")
 	}
+
 	// lets split the command across lines
 	commandLine = strings.ReplaceAll(commandLine, " --set", " \\\n    --set")
 
 	log.Logger().Infof("running command:\n\n%s\n\n", util.ColorInfo(commandLine))
 
+	if o.DryRun {
+		return nil
+	}
 	_, err = c.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run command %s", commandLine)
@@ -199,10 +169,13 @@ func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
 	if gitURL != "" {
 		args = append(args, "--set", fmt.Sprintf("url=%s", gitURL))
 	}
-	if o.Version != "" {
-		args = append(args, "--version", o.Version)
+	if o.ChartVersion != "" {
+		args = append(args, "--version", o.ChartVersion)
 	}
-	args = append(args, o.ReleaseName, "jx-git-operator")
+	if o.Namespace != "" {
+		args = append(args, "--namespace", o.Namespace)
+	}
+	args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
 
 	return util.Command{
 		Name: helmBin,
@@ -237,18 +210,16 @@ func (o *Options) findChartVersion(req *config.RequirementsConfig) (string, erro
 	return version, nil
 }
 
-func (o *Options) addUserPasswordForPrivateGitClone(bootConfig *v1alpha1.Boot, inCluster bool) (string, error) {
-	if o.GitUserName == "" && bootConfig != nil {
-		o.GitUserName = bootConfig.Spec.PipelineBotUser
-	}
-	token := o.GitToken
-	err := o.detectGitURL()
+func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return token, err
+		return gitURL, errors.Wrapf(err, "failed to parse git URL")
 	}
-	u, err := url.Parse(o.GitURL)
+	answer := gitInfo.HttpCloneURL()
+
+	u, err := url.Parse(answer)
 	if err != nil {
-		return token, errors.Wrapf(err, "failed to parse git URL %s", o.GitURL)
+		return answer, errors.Wrapf(err, "failed to parse git URL %s", answer)
 	}
 
 	// lets check if we've already got a user and password
@@ -256,66 +227,31 @@ func (o *Options) addUserPasswordForPrivateGitClone(bootConfig *v1alpha1.Boot, i
 		user := u.User
 		pwd, f := user.Password()
 		if user.Username() != "" && pwd != "" && f {
-			return token, nil
+			return answer, nil
 		}
 	}
 
-	username := o.GitUserName
+	log.Logger().Infof("git clone URL is %s now adding the user/password so we can clone it", util.ColorInfo(answer))
 
-	fmt.Printf("username %s token %s\n", username, token)
-
-	if username == "" || token == "" {
-		if !inCluster || (bootConfig != nil && bootConfig.UsingExternalSecrets()) {
-			if username == "" {
-				return token, util.MissingOption("git-user")
-			}
-			return token, util.MissingOption("git-token")
-		}
-		yamlFile := os.Getenv("JX_SECRETS_YAML")
-		if yamlFile == "" {
-			if bootConfig != nil && bootConfig.UsingExternalSecrets() {
-				return token, nil
-			}
-			return token, errors.Errorf("no $JX_SECRETS_YAML defined")
-		}
-		data, err := ioutil.ReadFile(yamlFile)
-		if err != nil {
-			return token, errors.Wrapf(err, "failed to load secrets YAML %s", yamlFile)
-		}
-
-		message := fmt.Sprintf("secrets YAML %s", yamlFile)
-		username, token, err = secretmgr.PipelineUserTokenFromSecretsYAML(data, message)
-		if err != nil {
-			return token, err
-		}
-	}
-	u.User = url.UserPassword(username, token)
-	o.GitURL = u.String()
-	o.KindResolver.GitURL = o.GitURL
-	return token, nil
-}
-
-func (o *Options) defaultEnvVars() {
+	// TODO if not batch mode ask the user for a username / token?
 	if o.GitUserName == "" {
-		o.GitUserName = os.Getenv("GIT_USERNAME")
+		return answer, util.MissingOption("username")
 	}
 	if o.GitToken == "" {
-		o.GitToken = os.Getenv("GIT_TOKEN")
+		return answer, util.MissingOption("token")
 	}
+	u.User = url.UserPassword(o.GitUserName, o.GitToken)
+	answer = u.String()
+	return answer, nil
 }
 
-func (o *Options) detectGitURL() error {
-	if o.GitURL == "" {
-		// lets try load the git URL from the secret
-		gitURL, err := o.KindResolver.LoadBootRunGitURLFromSecret()
-		if err != nil {
-			return errors.Wrapf(err, "failed to load the boot git URL from the Secret")
-		}
-		if gitURL == "" {
-			log.Logger().Warnf("no git-url specified and no boot git URL Secret found")
-		}
-		o.GitURL = gitURL
+func findGitURLFromDir(gitter gits.Gitter, dir string) (string, error) {
+	_, gitConfDir, err := gitter.FindGitConfigDir(dir)
+	if err != nil {
+		return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
 	}
-	o.KindResolver.GitURL = o.GitURL
-	return nil
+	if gitConfDir == "" {
+		return "", nil
+	}
+	return gitter.DiscoverUpstreamGitURL(gitConfDir)
 }
