@@ -30,7 +30,7 @@ Installs the git operator in a cluster
   
   ```bash
   jx-alpha-remote operator
-  ```%!(EXTRA string=jx-alpha-remote, string=jx-alpha-remote, string=jx-alpha-remote)
+  ```
 
 ### Options
 

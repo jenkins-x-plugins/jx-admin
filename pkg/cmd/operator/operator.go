@@ -71,7 +71,7 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 		Use:     "operator",
 		Short:   "installs the git operator in a cluster",
 		Long:    cmdLong,
-		Example: fmt.Sprintf(cmdExample, rootcmd.BinaryName, rootcmd.BinaryName, rootcmd.BinaryName),
+		Example: cmdExample,
 		Run: func(command *cobra.Command, args []string) {
 			common.SetLoggingLevel(command, args)
 			err := options.Run()
