@@ -7,13 +7,15 @@ import (
 	"strings"
 	"testing"
 
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-apps/pkg/jxapps"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner/fakerunner"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/create"
 	"github.com/jenkins-x/jx-remote/pkg/fakes/fakeauth"
-	"github.com/jenkins-x/jx-remote/pkg/fakes/fakegit"
-	"github.com/jenkins-x/jx-remote/pkg/fakes/fakejxfactory"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -87,7 +89,18 @@ func TestCreate(t *testing.T) {
 		_, co := create.NewCmdCreate()
 		co.BatchMode = true
 		co.NoOperator = true
-		co.Gitter = fakegit.NewGitFakeClone()
+
+		runner := &fakerunner.FakeRunner{
+			CommandRunner: func(c *cmdrunner.Command) (string, error) {
+				args := c.Args
+				if len(args) > 0 && args[0] == "clone" {
+					// lets really git clone but then fake out all other commands
+					return cmdrunner.DefaultCommandRunner(c)
+				}
+				return "", nil
+			},
+		}
+		co.Gitter = cli.NewCLIClient("", runner.Run)
 		co.DisableVerifyPackages = true
 		outFile, err := ioutil.TempFile("", "")
 		require.NoError(t, err, "failed to create tempo file")
@@ -103,7 +116,7 @@ func TestCreate(t *testing.T) {
 		if co.RepoName == "" {
 			co.RepoName = repoName
 		}
-		co.JXFactory = fakejxfactory.NewFakeFactory()
+		co.JXClient = v1fake.NewSimpleClientset()
 		co.EnvFactory.AuthConfigService = fakeauth.NewFakeAuthConfigService(t, "jstrachan", "dummytoken", "https://fake.com", "https://github.com")
 
 		err = co.Run()

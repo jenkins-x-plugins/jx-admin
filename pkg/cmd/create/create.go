@@ -5,6 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-remote/pkg/common"
@@ -12,13 +17,10 @@ import (
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/v2/pkg/config"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -99,7 +101,7 @@ func NewCmdCreate() (*cobra.Command, *CreateOptions) {
 // Run implements the command
 func (o *CreateOptions) Run() error {
 	if o.Gitter == nil {
-		o.Gitter = gits.NewGitCLI()
+		o.Gitter = cli.NewCLIClient("", o.CommandRunner)
 	}
 
 	if o.DevGitURL != "" {
@@ -107,7 +109,7 @@ func (o *CreateOptions) Run() error {
 			log.Logger().Warnf("you are creating a %s environment but are also trying to create a Pull Request on a development environment git repository %s - did you mean to do that?", util.ColorInfo(o.Environment), util.ColorInfo(o.DevGitURL))
 		}
 		if o.DevGitKind == "" {
-			o.DevGitKind = gits.SaasGitKind(o.DevGitURL)
+			o.DevGitKind = giturl.SaasGitKind(o.DevGitURL)
 			if o.DevGitKind == "" {
 				return errors.Errorf("missing git kind option: --dev-git-kind")
 			}
@@ -154,7 +156,7 @@ func (o *CreateOptions) Run() error {
 		return nil
 	}
 	if !o.BatchMode {
-		flag, err := util.Confirm("do you want to install the git operator into the cluster?", true, "the jx-git-operator is used to install/upgrade the components in the cluster via GitOps", common.GetIOFileHandles(o.IOFileHandles))
+		flag, err := o.GetInput().Confirm("do you want to install the git operator into the cluster?", true, "the jx-git-operator is used to install/upgrade the components in the cluster via GitOps")
 		if err != nil {
 			return errors.Wrapf(err, "failed to get confirmation of jx-git-operator install")
 		}
@@ -168,7 +170,7 @@ func (o *CreateOptions) Run() error {
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
 // otherwise lets make a temporary directory and clone the git repository specified
 // or if there is none make a new one
-func (o *CreateOptions) gitCloneIfRequired(gitter gits.Gitter) (string, error) {
+func (o *CreateOptions) gitCloneIfRequired(gitter gitclient.Interface) (string, error) {
 	gitURL := o.InitialGitURL
 	if o.Environment == "" {
 		if SupportHelm3ForDev {
@@ -201,11 +203,7 @@ func (o *CreateOptions) gitCloneIfRequired(gitter gits.Gitter) (string, error) {
 
 	log.Logger().Debugf("cloning %s to directory %s", util.ColorInfo(gitURL), util.ColorInfo(dir))
 
-	err = gitter.Clone(gitURL, dir)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
-	}
-	return dir, nil
+	return githelpers.GitCloneToTempDir(gitter, gitURL, dir)
 }
 
 func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind string) error {
@@ -213,11 +211,7 @@ func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind str
 	if cr == nil {
 		return errors.Errorf("no CreatedRepository available")
 	}
-	dir, err := ioutil.TempDir("", "helmboot-")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temporary directory")
-	}
-	err = o.Gitter.Clone(gitURL, dir)
+	dir, err := githelpers.GitCloneToTempDir(o.Gitter, gitURL, "")
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}

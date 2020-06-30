@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-helpers/pkg/input"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -23,7 +24,7 @@ type CreateRepository struct {
 
 // ConfirmValues confirms to the user the values to be used to create the new git repository
 // if using batch mode lets just validate the values are supplied or fail
-func (r *CreateRepository) ConfirmValues(batch bool, handles util.IOFileHandles) error {
+func (r *CreateRepository) ConfirmValues(i input.Interface, batch bool) error {
 	if batch {
 		if r.GitServer == "" {
 			return util.MissingOption("git-server")
@@ -37,7 +38,7 @@ func (r *CreateRepository) ConfirmValues(batch bool, handles util.IOFileHandles)
 		return nil
 	}
 	var err error
-	r.GitServer, err = util.PickValue("git server for the new git repository:", r.GitServer, true, "", handles)
+	r.GitServer, err = i.PickValue("git server for the new git repository:", r.GitServer, true, "")
 	if err != nil {
 		return err
 	}
@@ -47,18 +48,18 @@ func (r *CreateRepository) ConfirmValues(batch bool, handles util.IOFileHandles)
 		r.GitKind = saasGitKind
 	} else {
 		message := fmt.Sprintf("kind of the git server (%s):", r.GitServer)
-		r.GitKind, err = util.PickNameWithDefault(gits.KindGits, message, r.GitKind, "we need to know what kind of git provider this server is so we know what kind of REST API to use", handles)
+		r.GitKind, err = i.PickNameWithDefault(gits.KindGits, message, r.GitKind, "we need to know what kind of git provider this server is so we know what kind of REST API to use")
 		if err != nil {
 			return err
 		}
 	}
 
-	r.Owner, err = util.PickValue("git owner (user/organization) for the new git repository:", r.Owner, true, "", handles)
+	r.Owner, err = i.PickValue("git owner (user/organization) for the new git repository:", r.Owner, true, "")
 	if err != nil {
 		return err
 	}
 
-	r.Repository, err = util.PickValue("git repository name:", r.Repository, true, "", handles)
+	r.Repository, err = i.PickValue("git repository name:", r.Repository, true, "")
 	if err != nil {
 		return err
 	}

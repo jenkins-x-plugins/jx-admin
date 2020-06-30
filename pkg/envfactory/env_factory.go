@@ -7,29 +7,37 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/input"
+	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/authhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
-	"github.com/jenkins-x/jx-remote/pkg/jxadapt"
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
-	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 )
 
 type EnvFactory struct {
-	JXFactory            jxfactory.Factory
-	Gitter               gits.Gitter
+	KubeClient           kubernetes.Interface
+	JXClient             versioned.Interface
+	Gitter               gitclient.Interface
+	CommandRunner        cmdrunner.CommandRunner
 	AuthConfigService    auth.ConfigService
+	Input                input.Interface
 	RepoName             string
 	GitURLOutFile        string
 	OutDir               string
-	IOFileHandles        *util.IOFileHandles
+	IOFileHandles        *files.IOFileHandles
 	ScmClient            *scm.Client
 	BatchMode            bool
 	UseGitHubOAuth       bool
@@ -74,9 +82,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		cr.Repository = o.RepoName
 	}
 	o.CreatedRepository = cr
-
-	handles := jxadapt.ToIOHandles(o.IOFileHandles)
-	err = cr.ConfirmValues(o.BatchMode, handles)
+	err = cr.ConfirmValues(o.GetInput(), o.BatchMode)
 	if err != nil {
 		return err
 	}
@@ -118,6 +124,14 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		}
 	}
 	return nil
+}
+
+// GetInput lazily creates the input interface
+func (o *EnvFactory) GetInput() input.Interface {
+	if o.Input == nil {
+		o.Input = survey.NewInput()
+	}
+	return o.Input
 }
 
 // CreateScmClient creates a new scm client
@@ -168,24 +182,19 @@ func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsC
 
 // PushToGit pushes to the git repository
 func (o *EnvFactory) PushToGit(cloneURL string, userAuth *auth.UserAuth, dir string) error {
-	forkPushURL, err := o.Gitter.CreateAuthenticatedURL(cloneURL, userAuth)
+	forkPushURL, err := authhelpers.CreateAuthenticatedURL(cloneURL, userAuth)
 	if err != nil {
 		return errors.Wrapf(err, "creating push URL for %s", cloneURL)
 	}
 
 	remoteBranch := "master"
-	err = o.Gitter.Push(dir, forkPushURL, true, fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
+	_, err = o.Gitter.Command(dir, "push", forkPushURL, "--force", fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
 	if err != nil {
 		return errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
 	}
 
 	log.Logger().Infof("pushed code to the repository")
 	return nil
-}
-
-// JXAdapter creates an adapter to the jx code
-func (o *EnvFactory) JXAdapter() *jxadapt.JXAdapter {
-	return jxadapt.NewJXAdapter(o.JXFactory, o.Gitter, o.BatchMode)
 }
 
 // CreatePullRequest crates a pull request if there are git changes
@@ -196,7 +205,7 @@ func (o *EnvFactory) CreatePullRequest(dir string, gitURL string, kind string, b
 	}
 
 	gitter := o.Gitter
-	changes, err := gitter.HasChanges(dir)
+	changes, err := gitclient.HasChanges(gitter, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to detect if there were git changes in dir %s", dir)
 	}
@@ -213,13 +222,13 @@ func (o *EnvFactory) CreatePullRequest(dir string, gitURL string, kind string, b
 	}
 
 	commitMessage := fmt.Sprintf("%s\n\n%s", commitTitle, commitBody)
-	err = gitter.AddCommit(dir, commitMessage)
+	_, err = gitter.Command(dir, "commit", "-a", "-m", commitMessage, "--allow-empty")
 	if err != nil {
 		return errors.Wrapf(err, "failed to commit changes in dir %s", dir)
 	}
 
 	remote := "origin"
-	err = gitter.Push(dir, remote, false)
+	_, err = gitter.Command(dir, "push", remote)
 	if err != nil {
 		return errors.Wrapf(err, "failed to push to remote %s from dir %s", remote, dir)
 	}

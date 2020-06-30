@@ -9,29 +9,31 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
+	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/envfactory"
 	"github.com/jenkins-x/jx-remote/pkg/githelpers"
-	"github.com/jenkins-x/jx-remote/pkg/jxadapt"
 	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
 	"github.com/jenkins-x/jx-remote/pkg/upgrader"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
-	"github.com/jenkins-x/jx-promote/pkg/versionstream"
-	"github.com/jenkins-x/jx-promote/pkg/versionstream/versionstreamrepo"
+	"github.com/jenkins-x/jx-helpers/pkg/versionstream"
+	"github.com/jenkins-x/jx-helpers/pkg/versionstream/versionstreamrepo"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +55,7 @@ type UpgradeOptions struct {
 	envfactory.EnvFactory
 
 	OverrideRequirements    config.RequirementsConfig
-	IOFileHandles           *util.IOFileHandles
+	IOFileHandles           *files.IOFileHandles
 	Namespace               string
 	GitCloneURL             string
 	InitialGitURL           string
@@ -102,15 +104,20 @@ func (o *UpgradeOptions) AddUpgradeOptions(cmd *cobra.Command) {
 // Run implements the command
 func (o *UpgradeOptions) Run() error {
 	if o.Gitter == nil {
-		o.Gitter = gits.NewGitCLI()
+		o.Gitter = cli.NewCLIClient("", o.CommandRunner)
 	}
-	if o.JXFactory == nil {
-		o.JXFactory = jxfactory.NewFactory()
-	}
-
-	jxClient, ns, err := o.JXFactory.CreateJXClient()
+	var err error
+	o.JXClient, err = jxclient.LazyCreateJXClient(o.JXClient)
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to the Kubernetes cluster")
+		return errors.Wrapf(err, "failed to ")
+	}
+	jxClient := o.JXClient
+	ns := o.Namespace
+	if ns == "" {
+		ns, err = kubeclient.CurrentNamespace()
+		if err != nil {
+			return errors.Wrapf(err, "failed to get current namespace")
+		}
 	}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -214,19 +221,24 @@ func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
 				log.Logger().Infof("Build pack repository %s already on version %s", util.ColorInfo(buildPackURL), util.ColorInfo(version))
 			}
 
-			// lets check if we need to upgrade the project config
-			projectConfig, projectConfigFile, err := config.LoadProjectConfig(dir)
-			if err != nil {
-				return errors.Wrapf(err, "failed to load project config from dir %s", dir)
-			}
-			if projectConfig.BuildPackGitURef != version {
-				projectConfig.BuildPackGitURef = version
-				err = projectConfig.SaveConfig(projectConfigFile)
+			/*
+				TODO
+
+				// lets check if we need to upgrade the project config
+				projectConfig, projectConfigFile, err := config.LoadProjectConfig(dir)
 				if err != nil {
-					return errors.Wrapf(err, "failed to save project config file %s", projectConfigFile)
+					return errors.Wrapf(err, "failed to load project config from dir %s", dir)
 				}
-				modified = true
-			}
+				if projectConfig.BuildPackGitURef != version {
+					projectConfig.BuildPackGitURef = version
+					err = projectConfig.SaveConfig(projectConfigFile)
+					if err != nil {
+						return errors.Wrapf(err, "failed to save project config file %s", projectConfigFile)
+					}
+					modified = true
+				}
+
+			*/
 		}
 	}
 
@@ -245,11 +257,11 @@ func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
 		return errors.Wrapf(err, "failed to save the requirements to dir %s", requirementsFileName)
 	}
 
-	err = gitter.Add(dir, "*")
+	_, err = gitter.Command(dir, "add", "*")
 	if err != nil {
 		return errors.Wrapf(err, "failed to add to git in dir %s", dir)
 	}
-	changes, err := gitter.HasChanges(dir)
+	changes, err := gitclient.HasChanges(gitter, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if there are git changes in dir %s", dir)
 	}
@@ -258,7 +270,7 @@ func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
 		return nil
 	}
 
-	err = o.Gitter.CommitIfChanges(dir, "fix: upgrade version stream")
+	err = gitclient.CommitIfChanges(gitter, dir, "fix: upgrade version stream")
 	if err != nil {
 		return errors.Wrapf(err, "failed to git commit changes")
 	}
@@ -275,12 +287,12 @@ func (o *UpgradeOptions) upgradeAvailable(versionsDir string, versionStreamRef s
 	gitter := o.Gitter
 	var err error
 	if o.LatestRelease {
-		_, upgradeRef, err = gitter.GetCommitPointedToByLatestTag(versionsDir)
+		_, upgradeRef, err = gitclient.GetCommitPointedToByLatestTag(gitter, versionsDir)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get latest tag at %s", o.Dir)
 		}
 	} else {
-		upgradeRef, err = gitter.GetCommitPointedToByTag(versionsDir, upgradeRef)
+		upgradeRef, err = gitter.Command(versionsDir, "rev-list", "-n", "1", upgradeRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to get commit pointed to by %s", upgradeRef)
 		}
@@ -300,7 +312,7 @@ func (o *UpgradeOptions) cloneVersionStream(versionStreamURL string, upgradeRef 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temporary dir for version stream")
 	}
-	versionsDir, _, err := versionstreamrepo.CloneJXVersionsRepoToDir(tempDir, versionStreamURL, upgradeRef, settings, gitter, o.BatchMode, false, common.GetIOFileHandles(o.IOFileHandles))
+	versionsDir, _, err := versionstreamrepo.CloneJXVersionsRepoToDir(tempDir, versionStreamURL, upgradeRef, settings, gitter, o.BatchMode, false, files.GetIOFileHandles(o.IOFileHandles))
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone versions repo %s", versionStreamURL)
 	}
@@ -357,7 +369,7 @@ func (o *UpgradeOptions) MigrateToHelm3(jxClient versioned.Interface, ns string,
 	log.Logger().Infof("generated the boot configuration from the current cluster into the directory: %s", util.ColorInfo(dir))
 
 	// now lets add the generated files to git
-	err = o.Gitter.Add(dir, "*")
+	_, err = o.Gitter.Command(dir, "add", "*")
 	if err != nil {
 		return errors.Wrapf(err, "failed to add files to git")
 	}
@@ -365,7 +377,7 @@ func (o *UpgradeOptions) MigrateToHelm3(jxClient versioned.Interface, ns string,
 	if o.gitRepositoryExisted && o.UsePullRequest {
 		o.OutDir = dir
 		if !o.NoCommit {
-			err = o.Gitter.CommitIfChanges(dir, "fix: helmboot upgrader\n\nmigrating resources across to the latest Jenkins X GitOps source code")
+			err = gitclient.CommitIfChanges(o.Gitter, dir, "fix: helmboot upgrader\n\nmigrating resources across to the latest Jenkins X GitOps source code")
 			if err != nil {
 				return errors.Wrapf(err, "failed to git commit changes")
 			}
@@ -433,11 +445,7 @@ func (o *UpgradeOptions) addMissingFiles(dir string) error {
 	templateDir := ""
 	lazyCloneTemplates := func() error {
 		if templateDir == "" {
-			dir, err := ioutil.TempDir("", "helmboot-init")
-			if err != nil {
-				return errors.Wrap(err, "failed to create temp dir")
-			}
-			err = o.Gitter.Clone(o.InitialGitURL, dir)
+			dir, err := githelpers.GitCloneToTempDir(o.Gitter, o.InitialGitURL, "")
 			if err != nil {
 				return errors.Wrapf(err, "failed to git clone %s", o.InitialGitURL)
 			}
@@ -553,7 +561,7 @@ func (o *UpgradeOptions) writeNonHelmManagedResources(jxClient versioned.Interfa
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
 // otherwise lets make a temporary directory and clone the git repository specified
 // or if there is none make a new one
-func (o *UpgradeOptions) gitCloneIfRequired(gitter gits.Gitter, devSource v1.EnvironmentRepository) (string, error) {
+func (o *UpgradeOptions) gitCloneIfRequired(gitter gitclient.Interface, devSource v1.EnvironmentRepository) (string, error) {
 	if o.GitCredentials {
 		err := o.getGitCredentials()
 		if err != nil {
@@ -580,7 +588,7 @@ func (o *UpgradeOptions) gitCloneIfRequired(gitter gits.Gitter, devSource v1.Env
 	} else {
 		// if you specify and it has a git clone inside lets just use it rather than cloning
 		// as you may be inside a fork or something
-		d, _, err := gitter.FindGitConfigDir(dir)
+		d, _, err := gitclient.FindGitConfigDir(dir)
 		if err != nil {
 			return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
 		}
@@ -592,7 +600,7 @@ func (o *UpgradeOptions) gitCloneIfRequired(gitter gits.Gitter, devSource v1.Env
 
 	log.Logger().Debugf("cloning %s to directory %s", util.ColorInfo(gitURL), util.ColorInfo(dir))
 
-	err = gitter.Clone(gitURL, dir)
+	dir, err = githelpers.GitCloneToTempDir(o.Gitter, gitURL, dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}
@@ -602,6 +610,7 @@ func (o *UpgradeOptions) gitCloneIfRequired(gitter gits.Gitter, devSource v1.Env
 // replacePipeline if the `jenkins-x.yml` file is missing or does use the helm 3 / helmfile style configuration
 // lets replace with the new pipeline file
 func (o *UpgradeOptions) replacePipeline(dir string) error {
+	/* TODO
 	projectConfig, fileName, err := config.LoadProjectConfig(dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load Jenkins X Pipeline")
@@ -616,6 +625,7 @@ func (o *UpgradeOptions) replacePipeline(dir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to save Jenkins X Pipeline")
 	}
+	*/
 	return nil
 }
 
@@ -623,7 +633,7 @@ func (o *UpgradeOptions) createPullRequest(dir string, kind string, title string
 	remote := "origin"
 
 	log.Logger().Infof("pushing commits to ")
-	err := o.Gitter.Push(dir, remote, false, o.branchName)
+	_, err := o.Gitter.Command(dir, "push", remote, o.branchName)
 	if err != nil {
 		return errors.Wrapf(err, "failed to push to remote %s from dir %s", remote, dir)
 	}
@@ -668,6 +678,8 @@ func (o *UpgradeOptions) createPullRequest(dir string, kind string, title string
 }
 
 func (o *UpgradeOptions) getGitCredentials() error {
+	/*  TODO
+
 	log.Logger().Infof("setting up git credentials")
 
 	a := jxadapt.NewJXAdapter(o.JXFactory, o.Gitter, o.BatchMode)
@@ -684,5 +696,7 @@ func (o *UpgradeOptions) getGitCredentials() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to setup git credentials")
 	}
+
+	*/
 	return nil
 }

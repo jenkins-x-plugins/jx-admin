@@ -5,21 +5,19 @@ import (
 	"io/ioutil"
 	"os"
 
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-apps/pkg/jxapps"
+	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
+	"github.com/jenkins-x/jx-helpers/pkg/kube/naming"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/common"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
-	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
-	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -93,12 +91,12 @@ func GetBootJobCommand(requirements *config.RequirementsConfig, gitURL, gitUser,
 
 // GetRequirementsFromEnvironment tries to find the development environment then the requirements from it
 func GetRequirementsFromEnvironment(kubeClient kubernetes.Interface, jxClient versioned.Interface, namespace string) (*v1.Environment, *config.RequirementsConfig, error) {
-	ns, _, err := kube.GetDevNamespace(kubeClient, namespace)
+	ns, _, err := jxenv.GetDevNamespace(kubeClient, namespace)
 	if err != nil {
 		log.Logger().Warnf("could not find the dev namespace from namespace %s due to %s", namespace, err.Error())
 		ns = namespace
 	}
-	devEnv, err := kube.GetDevEnvironment(jxClient, ns)
+	devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
 	if err != nil {
 		log.Logger().Warnf("could not find dev Environment in namespace %s", ns)
 	}
@@ -114,7 +112,7 @@ func GetRequirementsFromEnvironment(kubeClient kubernetes.Interface, jxClient ve
 
 	// no dev environment found so lets return an empty environment
 	if devEnv == nil {
-		devEnv = kube.CreateDefaultDevEnvironment(ns)
+		devEnv = jxenv.CreateDefaultDevEnvironment(ns)
 	}
 	if devEnv.Namespace == "" {
 		devEnv.Namespace = ns
@@ -470,8 +468,9 @@ func defaultStorage(storage *config.StorageEntryConfig) {
 	}
 }
 
+/* TODO
 // FindRequirementsAndGitURL tries to find the requirements and git URL via either environment or directory
-func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string, gitter gits.Gitter, dir string) (*config.RequirementsConfig, string, error) {
+func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string, gitter gitclient.Interface, dir string) (*config.RequirementsConfig, string, error) {
 	var requirements *config.RequirementsConfig
 	gitURL := gitURLOption
 
@@ -489,7 +488,7 @@ func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string,
 		if err != nil {
 			return requirements, gitURL, err
 		}
-		devEnv, err := kube.GetDevEnvironment(jxClient, ns)
+		devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return requirements, gitURL, err
 		}
@@ -512,7 +511,7 @@ func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string,
 
 	if gitURL == "" {
 		// lets try find the git URL from
-		gitURL, err = findGitURLFromDir(gitter, dir)
+		gitURL, err = findGitURLFromDir(dir)
 		if err != nil {
 			return requirements, gitURL, errors.Wrapf(err, "your cluster has not been booted before and you are not inside a git clone of your dev environment repository so you need to pass in the URL of the git repository as --git-url")
 		}
@@ -520,14 +519,15 @@ func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string,
 	return requirements, gitURL, nil
 }
 
+
 // FindGitURL tries to find the git URL via either environment or directory
-func FindGitURL(jxFactory jxfactory.Factory) (string, error) {
+func FindGitURL(jxClient versioned.Interface) (string, error) {
 	gitURL := ""
 	jxClient, ns, err := jxFactory.CreateJXClient()
 	if err != nil {
 		return gitURL, err
 	}
-	devEnv, err := kube.GetDevEnvironment(jxClient, ns)
+	devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return gitURL, err
 	}
@@ -537,8 +537,8 @@ func FindGitURL(jxFactory jxfactory.Factory) (string, error) {
 	return gitURL, nil
 }
 
-func findGitURLFromDir(gitter gits.Gitter, dir string) (string, error) {
-	_, gitConfDir, err := gitter.FindGitConfigDir(dir)
+func findGitURLFromDir(dir string) (string, error) {
+	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
 	}
@@ -546,8 +546,9 @@ func findGitURLFromDir(gitter gits.Gitter, dir string) (string, error) {
 	if gitConfDir == "" {
 		return "", fmt.Errorf("no .git directory could be found from dir %s", dir)
 	}
-	return gitter.DiscoverUpstreamGitURL(gitConfDir)
+	return gitconfig.DiscoverUpstreamGitURL(gitConfDir)
 }
+*/
 
 // GitKind returns the git kind for the development environment or empty string if it can't be found
 func GitKind(devSource v1.EnvironmentRepository, r *config.RequirementsConfig) string {

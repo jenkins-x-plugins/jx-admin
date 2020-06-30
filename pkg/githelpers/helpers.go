@@ -9,19 +9,19 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
 // AddAndCommitFiles add and commits files
-func AddAndCommitFiles(gitter gits.Gitter, dir string, message string) (bool, error) {
-	err := gitter.Add(dir, "*")
+func AddAndCommitFiles(gitter gitclient.Interface, dir string, message string) (bool, error) {
+	_, err := gitter.Command(dir, "add", "*")
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to add files to git")
 	}
-	changes, err := gitter.HasChanges(dir)
+	changes, err := gitclient.HasChanges(gitter, dir)
 	if err != nil {
 		if err != nil {
 			return changes, errors.Wrapf(err, "failed to check if there are changes")
@@ -30,7 +30,7 @@ func AddAndCommitFiles(gitter gits.Gitter, dir string, message string) (bool, er
 	if !changes {
 		return changes, nil
 	}
-	err = gitter.CommitDir(dir, message)
+	_, err = gitter.Command(dir, "commit", "-m", message)
 	if err != nil {
 		return changes, errors.Wrapf(err, "failed to git commit initial code changes")
 	}
@@ -38,15 +38,15 @@ func AddAndCommitFiles(gitter gits.Gitter, dir string, message string) (bool, er
 }
 
 // CreateBranch creates a dynamic branch name and branch
-func CreateBranch(gitter gits.Gitter, dir string) (string, error) {
+func CreateBranch(gitter gitclient.Interface, dir string) (string, error) {
 	branchName := fmt.Sprintf("pr-%s", uuid.New().String())
 	gitRef := branchName
-	err := gitter.CreateBranch(dir, branchName)
+	_, err := gitter.Command(dir, "branch", branchName)
 	if err != nil {
 		return branchName, errors.Wrapf(err, "create branch %s from %s", branchName, gitRef)
 	}
 
-	err = gitter.Checkout(dir, branchName)
+	_, err = gitter.Command(dir, "checkout", branchName)
 	if err != nil {
 		return branchName, errors.Wrapf(err, "checkout branch %s", branchName)
 	}
@@ -54,7 +54,7 @@ func CreateBranch(gitter gits.Gitter, dir string) (string, error) {
 }
 
 // GitCloneToTempDir clones the git repository to either the given directory or create a temporary
-func GitCloneToTempDir(gitter gits.Gitter, gitURL string, dir string) (string, error) {
+func GitCloneToTempDir(gitter gitclient.Interface, gitURL string, dir string) (string, error) {
 	var err error
 	if dir != "" {
 		err = os.MkdirAll(dir, util.DefaultWritePermissions)
@@ -70,7 +70,8 @@ func GitCloneToTempDir(gitter gits.Gitter, gitURL string, dir string) (string, e
 
 	log.Logger().Debugf("cloning %s to directory %s", util.ColorInfo(gitURL), util.ColorInfo(dir))
 
-	err = gitter.Clone(gitURL, dir)
+	parentDir := filepath.Dir(dir)
+	_, err = gitter.Command(parentDir, "clone", gitURL, dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}
@@ -103,7 +104,7 @@ func AddUserTokenToURLIfRequired(gitURL, username, token string) (string, error)
 }
 
 // EnsureGitIgnoreContains ensures that the git ignore file in the given directory contains the given file
-func EnsureGitIgnoreContains(gitter gits.Gitter, dir string, file string) error {
+func EnsureGitIgnoreContains(gitter gitclient.Interface, dir string, file string) error {
 	path := filepath.Join(dir, ".gitignore")
 	exists, err := util.FileExists(path)
 	if err != nil {
@@ -130,11 +131,11 @@ func EnsureGitIgnoreContains(gitter gits.Gitter, dir string, file string) error 
 		return errors.Wrapf(err, "failed to save file %s", path)
 	}
 
-	err = gitter.Add(dir, ".gitignore")
+	_, err = gitter.Command(dir, "add", ".gitignore")
 	if err != nil {
 		return errors.Wrapf(err, "failed to add file %s to git", path)
 	}
-	err = gitter.CommitIfChanges(dir, fmt.Sprintf("fix: gitignore %s", file))
+	err = gitclient.CommitIfChanges(gitter, dir, fmt.Sprintf("fix: gitignore %s", file))
 	if err != nil {
 		return errors.Wrapf(err, "failed to commit file %s to git", path)
 	}

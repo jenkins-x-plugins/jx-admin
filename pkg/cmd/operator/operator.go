@@ -6,14 +6,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/helmer"
 	"github.com/jenkins-x/jx-remote/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
@@ -32,7 +33,6 @@ type Options struct {
 	ChartVersion string
 	DryRun       bool
 	BatchMode    bool
-	Gitter       gits.Gitter
 }
 
 var (
@@ -69,7 +69,6 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(command *cobra.Command, args []string) {
-			common.SetLoggingLevel(command, args)
 			err := options.Run()
 			helper.CheckErr(err)
 		},
@@ -108,7 +107,7 @@ func (o *Options) Run() error {
 	}
 	var err error
 	if o.GitURL == "" {
-		o.GitURL, err = findGitURLFromDir(o.Git(), o.Dir)
+		o.GitURL, err = findGitURLFromDir(o.Dir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to detect the git URL from the directory %s", o.Dir)
 		}
@@ -186,15 +185,6 @@ func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
 		Args: args,
 	}
 }
-
-// Git lazily create a gitter if its not specified
-func (o *Options) Git() gits.Gitter {
-	if o.Gitter == nil {
-		o.Gitter = gits.NewGitCLI()
-	}
-	return o.Gitter
-}
-
 func (o *Options) findChartVersion(req *config.RequirementsConfig) (string, error) {
 	/*
 		if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {
@@ -252,13 +242,13 @@ func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
 	return answer, nil
 }
 
-func findGitURLFromDir(gitter gits.Gitter, dir string) (string, error) {
-	_, gitConfDir, err := gitter.FindGitConfigDir(dir)
+func findGitURLFromDir(dir string) (string, error) {
+	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
 	}
 	if gitConfDir == "" {
 		return "", nil
 	}
-	return gitter.DiscoverUpstreamGitURL(gitConfDir)
+	return gitconfig.DiscoverUpstreamGitURL(gitConfDir)
 }

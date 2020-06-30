@@ -2,6 +2,7 @@ module github.com/jenkins-x/jx-remote
 
 require (
 	github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
+	github.com/chromedp/chromedp v0.1.1
 	github.com/cli/cli v0.6.2
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -10,10 +11,11 @@ require (
 	github.com/heptio/sonobuoy v0.16.0
 	github.com/jenkins-x/go-scm v1.5.143
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
+	github.com/jenkins-x/jx-api v0.0.11
 	github.com/jenkins-x/jx-apps v0.0.1
-	github.com/jenkins-x/jx-kube-client v0.0.3
+	github.com/jenkins-x/jx-helpers v1.0.15
+	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.10
-	github.com/jenkins-x/jx-promote v0.0.45
 	github.com/jenkins-x/jx/v2 v2.1.90
 	github.com/jetstack/cert-manager v0.9.1
 	github.com/mitchellh/go-homedir v1.1.0
@@ -21,9 +23,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.6.0
+	github.com/stretchr/testify v1.6.1
 	github.com/tektoncd/pipeline v0.11.3
-	gopkg.in/AlecAivazis/survey.v1 v1.8.3
+	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	k8s.io/api v0.17.2
 	k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833
@@ -64,5 +66,7 @@ replace github.com/TV4/logrus-stackdriver-formatter => github.com/jenkins-x/logr
 replace k8s.io/test-infra => github.com/jenkins-x/test-infra v0.0.0-20200611142252-211a92405c22
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
+
+replace github.com/jenkins-x/jx-helpers => /workspace/go/src/github.com/jenkins-x/jx-helpers
 
 go 1.13

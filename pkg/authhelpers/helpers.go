@@ -1,9 +1,15 @@
 package authhelpers
 
 import (
+	"net/url"
+
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/go-scm/scm/factory"
-	"github.com/jenkins-x/jx-remote/pkg/common"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-remote/pkg/gitconfig"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
@@ -15,8 +21,9 @@ import (
 // AuthFacade a helper object for getting auth tokens
 type AuthFacade struct {
 	Service        auth.ConfigService
-	Gitter         gits.Gitter
-	IOFileHandles  *util.IOFileHandles
+	Gitter         gitclient.Interface
+	CommandRunner  cmdrunner.CommandRunner
+	IOFileHandles  *files.IOFileHandles
 	BatchMode      bool
 	UseGitHubOAuth bool
 	gitConfig      gitconfig.Context
@@ -32,7 +39,7 @@ func NewAuthFacade() (*AuthFacade, error) {
 }
 
 // NewAuthFacadeWithArgs creates a new auth facade with a set of arguments
-func NewAuthFacadeWithArgs(svc auth.ConfigService, gitter gits.Gitter, ioFileHandles *util.IOFileHandles, batchMode bool, useGitHubOAuth bool) (*AuthFacade, error) {
+func NewAuthFacadeWithArgs(svc auth.ConfigService, gitter gitclient.Interface, ioFileHandles *files.IOFileHandles, batchMode bool, useGitHubOAuth bool) (*AuthFacade, error) {
 	return &AuthFacade{
 		Service:        svc,
 		Gitter:         gitter,
@@ -58,9 +65,9 @@ func createAuthConfigServiceFile(fileName string, serverKind string) (auth.Confi
 }
 
 // Git lazily create a gitter if its not specified
-func (f *AuthFacade) Git() gits.Gitter {
+func (f *AuthFacade) Git() gitclient.Interface {
 	if f.Gitter == nil {
-		f.Gitter = gits.NewGitCLI()
+		f.Gitter = cli.NewCLIClient("", f.CommandRunner)
 	}
 	return f.Gitter
 }
@@ -106,8 +113,12 @@ func (f *AuthFacade) FindGitUserTokenForServer(serverURL string, owner string) (
 		kind = gits.SaasGitKind(serverURL)
 	}
 
-	ioHandles := common.GetIOFileHandles(f.IOFileHandles)
-
+	ff := files.GetIOFileHandles(f.IOFileHandles)
+	ioHandles := util.IOFileHandles{
+		Out: ff.Out,
+		Err: ff.Err,
+		In:  ff.In,
+	}
 	userAuth, err := cfg.PickServerUserAuth(server, "Git user name:", f.BatchMode, owner, ioHandles)
 	if err != nil {
 		return user, token, kind, errors.Wrapf(err, "failed to pick git user name for server %s", serverURL)
@@ -115,7 +126,7 @@ func (f *AuthFacade) FindGitUserTokenForServer(serverURL string, owner string) (
 
 	if userAuth == nil || userAuth.IsInvalid() {
 		fn := func(username string) error {
-			f.Git().PrintCreateRepositoryGenerateAccessToken(server, username, ioHandles.Out)
+			giturl.PrintCreateRepositoryGenerateAccessToken(server.Kind, server.URL, username, ioHandles.Out)
 			return nil
 		}
 		err = cfg.EditUserAuth(server.Label(), userAuth, userAuth.Username, false, f.BatchMode, fn, ioHandles)
@@ -183,4 +194,22 @@ func (f *AuthFacade) ScmClient(serverURL string, owner string, kind string) (*sc
 
 	client, err := factory.NewClient(kind, serverURL, token)
 	return client, token, login, err
+}
+
+// CreateAuthenticatedURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
+func CreateAuthenticatedURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+	u, err := url.Parse(cloneURL)
+	if err != nil {
+		// already a git/ssh url?
+		return cloneURL, nil
+	}
+	// The file scheme doesn't support auth
+	if u.Scheme == "file" {
+		return cloneURL, nil
+	}
+	if userAuth.Username != "" || userAuth.ApiToken != "" {
+		u.User = url.UserPassword(userAuth.Username, userAuth.ApiToken)
+		return u.String(), nil
+	}
+	return cloneURL, nil
 }

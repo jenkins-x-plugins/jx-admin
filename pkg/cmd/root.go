@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx-helpers/pkg/cobras"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/create"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx-remote/pkg/cmd/version"
-	"github.com/jenkins-x/jx-remote/pkg/common"
 	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
 	"github.com/spf13/cobra"
 )
@@ -23,9 +23,9 @@ func Main() *cobra.Command {
 			}
 		},
 	}
-	cmd.AddCommand(common.SplitCommand(create.NewCmdCreate()))
-	cmd.AddCommand(common.SplitCommand(operator.NewCmdOperator()))
-	cmd.AddCommand(common.SplitCommand(upgrade.NewCmdUpgrade()))
-	cmd.AddCommand(common.SplitCommand(version.NewCmdVersion()))
+	cmd.AddCommand(cobras.SplitCommand(create.NewCmdCreate()))
+	cmd.AddCommand(cobras.SplitCommand(operator.NewCmdOperator()))
+	cmd.AddCommand(cobras.SplitCommand(upgrade.NewCmdUpgrade()))
+	cmd.AddCommand(cobras.SplitCommand(version.NewCmdVersion()))
 	return cmd
 }
