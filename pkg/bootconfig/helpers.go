@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx-remote/pkg/apis/boot/v1alpha1"
+	"github.com/jenkins-x/jx-admin/pkg/apis/boot/v1alpha1"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"

@@ -1,9 +1,9 @@
 package upgrader
 
 import (
+	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-remote/pkg/reqhelpers"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 )

@@ -144,7 +144,7 @@ func CreateHelmAnnotatePlugin(version string, user string, token string) jenkins
 }
 
 func getPluginBinDir() (string, error) {
-	pluginBinDir, err := homedir.PluginBinDir(os.Getenv("JX_REMOTE_HOME"), ".jx-remote")
+	pluginBinDir, err := homedir.PluginBinDir(os.Getenv("JX_REMOTE_HOME"), ".jx-admin")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to find plugin home dir")
 	}

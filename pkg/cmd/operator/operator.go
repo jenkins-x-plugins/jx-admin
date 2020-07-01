@@ -6,15 +6,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx-admin/pkg/helmer"
+	"github.com/jenkins-x/jx-admin/pkg/plugins/helmplugin"
+	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx-remote/pkg/helmer"
-	"github.com/jenkins-x/jx-remote/pkg/plugins/helmplugin"
-	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
@@ -66,6 +66,7 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command := &cobra.Command{
 		Use:     "operator",
 		Short:   "installs the git operator in a cluster",
+		Aliases: []string{"boot"},
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(command *cobra.Command, args []string) {

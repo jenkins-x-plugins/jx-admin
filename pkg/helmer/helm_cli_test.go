@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	helm "github.com/jenkins-x/jx-remote/pkg/helmer"
+	helm "github.com/jenkins-x/jx-admin/pkg/helmer"
 	"github.com/stretchr/testify/assert"
 
 	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"

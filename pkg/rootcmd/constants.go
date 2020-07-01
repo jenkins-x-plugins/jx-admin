@@ -2,8 +2,8 @@ package rootcmd
 
 var (
 	// TopLevelCommand top level command
-	TopLevelCommand = "jx-alpha-remote"
+	TopLevelCommand = "jx-admin"
 
 	// BinaryName the name of the command binary in help
-	BinaryName = "jx-alpha-remote"
+	BinaryName = "jx-admin"
 )

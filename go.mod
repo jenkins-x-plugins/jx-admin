@@ -1,4 +1,4 @@
-module github.com/jenkins-x/jx-remote
+module github.com/jenkins-x/jx-admin
 
 require (
 	github.com/cli/cli v0.6.2

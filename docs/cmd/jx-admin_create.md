@@ -1,11 +1,11 @@
-## jx-alpha-remote create
+## jx-admin create
 
 Creates a new git repository for a new Jenkins X installation
 
 ### Usage
 
 ```
-jx-alpha-remote create
+jx-admin create
 ```
 
 ### Synopsis
@@ -15,7 +15,7 @@ Creates a new git repository for a new Jenkins X installation
 ### Examples
 
   # create a new git repository which we can then boot up
-  jx-alpha-remote create
+  jx-admin create
 
 ### Options
 
@@ -31,11 +31,14 @@ Creates a new git repository for a new Jenkins X installation
       --bucket-repo string           the bucket URL to store repository artifacts
       --bucket-reports string        the bucket URL to store reports. If not specified default to te logs bucket
       --canary                       enables Canary deployment of apps by default
+      --chart string                 the chart name to use to install the git operator (default "jx-labs/jx-git-operator")
+      --chart-version string         override the helm chart version used for the git operator
   -c, --cluster string               configures the cluster name
       --dev-git-kind string          The kind of git server for the development environment
       --dev-git-url string           The git URL of the development environment if you are creating a remote staging/production cluster. If specified this will create a Pull Request on the development cluster
       --dir string                   The directory used to create the development environment git repository inside. If not specified a temporary directory will be used
   -d, --domain string                configures the domain name
+      --dry-run                      if enabled just display the helm command that will run but don't actually do anything
   -e, --env string                   The name of the remote environment to create
       --env-git-owner string         the git owner (organisation or user) used to own the git repositories for the environments
       --env-git-public               enables or disables whether the environment repositories should be public
@@ -48,25 +51,23 @@ Creates a new git repository for a new Jenkins X installation
   -g, --gitops                       enables or disables the use of gitops
   -h, --help                         help for create
       --hpa                          enables HPA deployment of apps by default
-      --ingress-kind string          configures the kind of ingress used (e.g. whether to use Ingress or VirtualService resources. Possible values: ingress, istio
-      --ingress-namespace string     configures the service kind. e.g. specify NodePort unless you want to use the default LoadBalancer
-      --ingress-service string       configures the ingress service name when no ingress domain is specified and we need to detect the LoadBalancer IP
       --initial-git-url string       The git URL to clone to fetch the initial set of files for a helm 3 / helmfile based git configuration if this command is not run inside a git clone or against a GitOps based cluster
       --kaniko                       enables or disables the use of kaniko
       --kaniko-sa string             configures the Kaniko service account name
+      --name string                  the helm release name t ouse (default "jxgo")
   -n, --namespace string             configures the namespace to use
+      --no-operator                  If enabled then don't try to install the git operator after creating the git repository
       --oauth                        Enables the use of OAuth login to github.com to get a github access token
       --out string                   the name of the file to save with the created git URL inside
       --project string               configures the Google Project ID
-  -p, --provider string              configures the kubernetes provider.  Supported providers: aks, alibaba, aws, eks, gke, icp, iks, jx-infra, kind, kubernetes, oke, openshift, pks
+  -p, --provider string              configures the kubernetes provider.  Supported providers: aks, alibaba, aws, eks, gke, icp, iks, jx-infra, kubernetes, oke, openshift, pks
       --region string                configures the cloud region
       --registry string              configures the host name of the container registry
       --remove jx-apps.yml           The apps/charts to remove from the jx-apps.yml file to remove the apps
       --repo string                  the name of the development git repository to create
       --repository string            the artifact repository. Possible values are: none, bucketrepo, nexus, artifactory
   -r, --requirements string          The 'jx-requirements.yml' file to use in the created development git repository. This file may be created via terraform
-      --secret string                configures the secret storage kind. Possible values: gsm, local, vault
-      --service-type string          the Ingress controller Service Type such as NodePort if using on premise and you do not have a LoadBalancer service type support
+      --secret string                configures the secret storage kind. Possible values: local, vault
       --terraform                    enables or disables the use of terraform
       --tls                          enable TLS for Ingress
       --tls-email string             the TLS email address to enable TLS on the domain
@@ -88,6 +89,6 @@ Creates a new git repository for a new Jenkins X installation
 
 ### SEE ALSO
 
-* [jx-alpha-remote](jx-alpha-remote.md)	 - boots up Jenkins and/or Jenkins X in a Kubernetes cluster using GitOps
+* [jx-admin](jx-admin.md)	 - boots up Jenkins and/or Jenkins X in a Kubernetes cluster using GitOps
 
-###### Auto generated by spf13/cobra on 29-Jun-2020
+###### Auto generated by spf13/cobra on 1-Jul-2020

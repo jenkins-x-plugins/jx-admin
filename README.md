@@ -1,18 +1,18 @@
 # jx alpha remote
 
-[![Documentation](https://godoc.org/github.com/jenkins-x/jx-remote?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx-remote)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx-remote)](https://goreportcard.com/report/github.com/jenkins-x/jx-remote)
-[![Releases](https://img.shields.io/github/release-pre/jenkins-x-labs/helmboot.svg)](https://github.com/jenkins-x/jx-remote/releases)
-[![LICENSE](https://img.shields.io/github/license/jenkins-x-labs/helmboot.svg)](https://github.com/jenkins-x/jx-remote/blob/master/LICENSE)
+[![Documentation](https://godoc.org/github.com/jenkins-x/jx-admin?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx-admin)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx-admin)](https://goreportcard.com/report/github.com/jenkins-x/jx-admin)
+[![Releases](https://img.shields.io/github/release-pre/jenkins-x-labs/helmboot.svg)](https://github.com/jenkins-x/jx-admin/releases)
+[![LICENSE](https://img.shields.io/github/license/jenkins-x-labs/helmboot.svg)](https://github.com/jenkins-x/jx-admin/blob/master/LICENSE)
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://slack.k8s.io/)
 
-`jx-alpha-remote` is a small command line tool for System Administrators install / upgrade kubernetes applications such as [Jenkins X](https://jenkins-x.io/) via GitOps and immutable infrastructure.
+`jx-admin` is a small command line tool for System Administrators install / upgrade kubernetes applications such as [Jenkins X](https://jenkins-x.io/) via GitOps and immutable infrastructure.
 
-`jx-alpha-remote`  is based on [helm 3.x](https://helm.sh/) and [helmfile](https://github.com/roboll/helmfile) under the covers.
+`jx-admin`  is based on [helm 3.x](https://helm.sh/) and [helmfile](https://github.com/roboll/helmfile) under the covers.
 
 ## Commands
 
-See the [jx-alpha-remote command reference](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-alpha-remote.md)
+See the [jx-admin command reference](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-admin.md)
 
 ## Creating a new installation
 

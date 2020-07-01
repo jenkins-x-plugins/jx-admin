@@ -1,8 +1,8 @@
 package helmplugin
 
 import (
-	"github.com/jenkins-x/jx-remote/pkg/helmer"
-	"github.com/jenkins-x/jx-remote/pkg/plugins"
+	"github.com/jenkins-x/jx-admin/pkg/helmer"
+	"github.com/jenkins-x/jx-admin/pkg/plugins"
 	"github.com/pkg/errors"
 )
 

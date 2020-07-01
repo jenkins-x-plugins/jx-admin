@@ -9,7 +9,7 @@ echo "apiVersion: jenkins.io/v1
 kind: Plugin
 metadata:
   labels:
-    jenkins.io/pluginCommand: jx-remote
+    jenkins.io/pluginCommand: jx-admin
   name: remote
 spec:
   description: CloudBees plugin for remote environments

@@ -2,8 +2,8 @@
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SHELL := /bin/bash
-NAME := jx-remote
-BINARY_NAME := jx-alpha-remote
+NAME := jx-admin
+BINARY_NAME := jx-admin
 BUILD_TARGET = build
 MAIN_SRC_FILE=cmd/main.go
 GO := GO111MODULE=on go
@@ -35,7 +35,7 @@ VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-versio
 # Full build flags used when building binaries. Not used for test compilation/execution.
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/cmd/version.Version=$(VERSION)\
-		-X github.com/jenkins-x/jx-remote/pkg/cmd/version.Version=$(VERSION)\
+		-X github.com/jenkins-x/jx-admin/pkg/cmd/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.BuildDate='$(BUILD_DATE)'\

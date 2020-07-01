@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
+	"github.com/jenkins-x/jx-admin/pkg/fakes/fakeauth"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-api/pkg/config"
@@ -14,8 +16,6 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner/fakerunner"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
-	"github.com/jenkins-x/jx-remote/pkg/cmd/create"
-	"github.com/jenkins-x/jx-remote/pkg/fakes/fakeauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

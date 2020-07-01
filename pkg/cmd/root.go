@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
+	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
+	"github.com/jenkins-x/jx-admin/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx-admin/pkg/cmd/version"
+	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx-remote/pkg/cmd/create"
-	"github.com/jenkins-x/jx-remote/pkg/cmd/operator"
-	"github.com/jenkins-x/jx-remote/pkg/cmd/upgrade"
-	"github.com/jenkins-x/jx-remote/pkg/cmd/version"
-	"github.com/jenkins-x/jx-remote/pkg/rootcmd"
 	"github.com/spf13/cobra"
 )
 
