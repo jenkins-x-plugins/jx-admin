@@ -13,7 +13,7 @@ ORG := jenkins-x
 ORG_REPO := $(ORG)/$(NAME)
 RELEASE_ORG_REPO := $(ORG_REPO)
 ROOT_PACKAGE := github.com/$(ORG_REPO)
-GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
+GO_VERSION := 1.13
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/,*.go)
 
 GOPRIVATE := github.com/jenkins-x/jx-apps,github.com/jenkins-x/jx-helpers
@@ -85,7 +85,6 @@ print-version: ## Print version
 
 build: $(GO_DEPENDENCIES) clean ## Build jx-labs binary for current OS
 	go env -w GOPRIVATE=github.com/jenkins-x/jx-apps,github.com/jenkins-x/jx-helpers,github.com/jenkins-x/jx-promote
-	go mod download
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(BINARY_NAME) $(MAIN_SRC_FILE)
 
 build-all: $(GO_DEPENDENCIES) build make-reports-dir ## Build all files - runtime, all tests etc.
