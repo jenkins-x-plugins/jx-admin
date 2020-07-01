@@ -55,6 +55,4 @@ replace k8s.io/test-infra => github.com/jenkins-x/test-infra v0.0.0-202006111422
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
 
-replace github.com/jenkins-x/jx-helpers => /workspace/go/src/github.com/jenkins-x/jx-helpers
-
 go 1.13
