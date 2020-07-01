@@ -116,6 +116,7 @@ install: $(GO_DEPENDENCIES) ## Install the binary
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) $(MAIN_SRC_FILE)
 
 linux: ## Build for Linux
+	go env -w GOPRIVATE=github.com/jenkins-x/jx-apps,github.com/jenkins-x/jx-helpers,github.com/jenkins-x/jx-promote
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/linux/$(BINARY_NAME) $(MAIN_SRC_FILE)
 	chmod +x build/linux/$(BINARY_NAME)
 
