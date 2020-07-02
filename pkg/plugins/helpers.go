@@ -2,14 +2,12 @@ package plugins
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/pkg/homedir"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +27,7 @@ func GetHelmBinary(version string) (string, error) {
 	if version == "" {
 		version = HelmVersion
 	}
-	pluginBinDir, err := getPluginBinDir()
+	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +61,7 @@ func GetHelmfileBinary(version string) (string, error) {
 	if version == "" {
 		version = HelmfileVersion
 	}
-	pluginBinDir, err := getPluginBinDir()
+	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +99,7 @@ func GetHelmAnnotateBinary(version string, user string, token string) (string, e
 	if version == "" {
 		version = HelmAnnotateVersion
 	}
-	pluginBinDir, err := getPluginBinDir()
+	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err
 	}
@@ -141,12 +139,4 @@ func CreateHelmAnnotatePlugin(version string, user string, token string) jenkins
 		},
 	}
 	return plugin
-}
-
-func getPluginBinDir() (string, error) {
-	pluginBinDir, err := homedir.PluginBinDir(os.Getenv("JX_REMOTE_HOME"), ".jx-admin")
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to find plugin home dir")
-	}
-	return pluginBinDir, nil
 }
