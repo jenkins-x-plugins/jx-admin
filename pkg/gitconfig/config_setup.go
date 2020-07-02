@@ -39,6 +39,7 @@ func setupConfigFile(filename string) (*configEntry, error) {
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		WriteSuccessHTML: func(w io.Writer) {
+			//noinspection GoPrintFunctions
 			fmt.Fprintln(w, oauthSuccessPage)
 		},
 		VerboseStream: verboseStream,

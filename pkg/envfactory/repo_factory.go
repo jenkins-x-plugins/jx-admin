@@ -89,15 +89,15 @@ func (r *CreateRepository) CreateRepository(scmClient *scm.Client) (*scm.Reposit
 
 	log.Logger().Infof("creating git repository %s/%s on server %s", info(r.Owner), info(r.Repository), info(r.GitServer))
 
-	input := &scm.RepositoryInput{
+	repoInput := &scm.RepositoryInput{
 		Name:    r.Repository,
 		Private: !r.GitPublic,
 	}
 	// only specify owner if its not the current user
 	if r.CurrentUsername != r.Owner {
-		input.Namespace = r.Owner
+		repoInput.Namespace = r.Owner
 	}
-	repo, _, err = scmClient.Repositories.Create(ctx, input)
+	repo, _, err = scmClient.Repositories.Create(ctx, repoInput)
 	if err != nil {
 		return repo, errors.Wrapf(err, "failed to create repository %s", fullName)
 	}

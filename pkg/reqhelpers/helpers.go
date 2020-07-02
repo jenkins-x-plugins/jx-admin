@@ -114,7 +114,7 @@ func GetRequirementsFromEnvironment(kubeClient kubernetes.Interface, jxClient ve
 	if devEnv == nil {
 		devEnv = jxenv.CreateDefaultDevEnvironment(ns)
 	}
-	if devEnv.Namespace == "" {
+	if devEnv != nil && devEnv.Namespace == "" {
 		devEnv.Namespace = ns
 	}
 	requirements := config.NewRequirementsConfig()
@@ -314,7 +314,7 @@ func ValidateApps(dir string, addApps []string, removeApps []string) (*jxapps.Ap
 		}
 	}
 
-	if modified {
+	if modified && apps != nil {
 		err = apps.SaveConfig(appsFileName)
 		if err != nil {
 			return apps, appsFileName, errors.Wrapf(err, "failed to save modified file %s", appsFileName)

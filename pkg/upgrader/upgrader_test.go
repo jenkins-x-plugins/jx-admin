@@ -33,7 +33,7 @@ func TestHelmfileUpgradeFromCluster(t *testing.T) {
 		files, err := ioutil.ReadDir(envDir)
 		require.NoError(t, err, "failed to read dir %s", envDir)
 
-		envs := []v1.Environment{}
+		var envs []v1.Environment
 		for _, f := range files {
 			if !f.IsDir() && filepath.Ext(f.Name()) == ".yaml" {
 				e := v1.Environment{}

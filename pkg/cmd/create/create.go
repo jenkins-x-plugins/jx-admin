@@ -35,11 +35,8 @@ var (
 	`)
 )
 
-// SupportHelm3ForDev for now lets disable using helm3 in development
-const SupportHelm3ForDev = false
-
-// CreateOptions the options for creating a repository
-type CreateOptions struct {
+// Options the options for creating a repository
+type Options struct {
 	envfactory.EnvFactory
 	Operator              operator.Options
 	DisableVerifyPackages bool
@@ -59,8 +56,8 @@ type CreateOptions struct {
 }
 
 // NewCmdCreate creates a command object for the command
-func NewCmdCreate() (*cobra.Command, *CreateOptions) {
-	o := &CreateOptions{}
+func NewCmdCreate() (*cobra.Command, *Options) {
+	o := &Options{}
 
 	// lets add defaults for the operator configuration
 	_, oo := operator.NewCmdOperator()
@@ -99,7 +96,7 @@ func NewCmdCreate() (*cobra.Command, *CreateOptions) {
 }
 
 // Run implements the command
-func (o *CreateOptions) Run() error {
+func (o *Options) Run() error {
 	if o.Gitter == nil {
 		o.Gitter = cli.NewCLIClient("", o.CommandRunner)
 	}
@@ -170,14 +167,10 @@ func (o *CreateOptions) Run() error {
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
 // otherwise lets make a temporary directory and clone the git repository specified
 // or if there is none make a new one
-func (o *CreateOptions) gitCloneIfRequired(gitter gitclient.Interface) (string, error) {
+func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error) {
 	gitURL := o.InitialGitURL
 	if o.Environment == "" {
-		if SupportHelm3ForDev {
-			o.Environment = "dev"
-		} else {
-			return "", util.MissingOption("env")
-		}
+		o.Environment = "dev"
 	}
 	if gitURL == "" {
 		if o.Environment == "dev" {
@@ -206,7 +199,7 @@ func (o *CreateOptions) gitCloneIfRequired(gitter gitclient.Interface) (string, 
 	return githelpers.GitCloneToTempDir(gitter, gitURL, dir)
 }
 
-func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind string) error {
+func (o *Options) createPullRequestOnDevRepository(gitURL string, kind string) error {
 	cr := o.CreatedRepository
 	if cr == nil {
 		return errors.Errorf("no CreatedRepository available")
@@ -258,7 +251,7 @@ func (o *CreateOptions) createPullRequestOnDevRepository(gitURL string, kind str
 	return o.EnvFactory.CreatePullRequest(dir, gitURL, kind, "", commitTitle, commitBody)
 }
 
-func (o *CreateOptions) installGitOperator() error {
+func (o *Options) installGitOperator() error {
 	userAuth := o.EnvFactory.UserAuth
 	if userAuth == nil {
 		return errors.Errorf("no UserAuth was created for the environment git repository")

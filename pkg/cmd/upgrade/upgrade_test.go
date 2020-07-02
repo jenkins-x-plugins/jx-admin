@@ -45,8 +45,8 @@ func TestUpgrade(t *testing.T) {
 		files, err := ioutil.ReadDir(envDir)
 		require.NoError(t, err, "failed to read dir %s", envDir)
 
-		kubeObjects := []runtime.Object{}
-		jxObjects := []runtime.Object{}
+		var kubeObjects []runtime.Object
+		var jxObjects []runtime.Object
 		for _, f := range files {
 			if !f.IsDir() && filepath.Ext(f.Name()) == ".yaml" {
 				e := &v1.Environment{}

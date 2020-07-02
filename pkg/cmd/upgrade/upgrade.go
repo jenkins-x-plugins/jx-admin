@@ -50,8 +50,8 @@ var (
 	`)
 )
 
-// UpgradeOptions the options for upgrading a cluster
-type UpgradeOptions struct {
+// Options the options for upgrading a cluster
+type Options struct {
 	envfactory.EnvFactory
 
 	OverrideRequirements    config.RequirementsConfig
@@ -70,8 +70,8 @@ type UpgradeOptions struct {
 }
 
 // NewCmdUpgrade creates a command object for the command
-func NewCmdUpgrade() (*cobra.Command, *UpgradeOptions) {
-	o := &UpgradeOptions{}
+func NewCmdUpgrade() (*cobra.Command, *Options) {
+	o := &Options{}
 
 	cmd := &cobra.Command{
 		Use:     "upgrade",
@@ -87,7 +87,7 @@ func NewCmdUpgrade() (*cobra.Command, *UpgradeOptions) {
 	return cmd, o
 }
 
-func (o *UpgradeOptions) AddUpgradeOptions(cmd *cobra.Command) {
+func (o *Options) AddUpgradeOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", "", "The directory used to create/clone the development git repository. If no directory is specified a temporary directory will be used")
 	cmd.Flags().StringVarP(&o.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", config.DefaultVersionsRef, "a version stream ref to use to upgrade to")
 	cmd.Flags().BoolVarP(&o.LatestRelease, "latest-release", "", false, "upgrade to latest release tag")
@@ -102,7 +102,7 @@ func (o *UpgradeOptions) AddUpgradeOptions(cmd *cobra.Command) {
 }
 
 // Run implements the command
-func (o *UpgradeOptions) Run() error {
+func (o *Options) Run() error {
 	if o.Gitter == nil {
 		o.Gitter = cli.NewCLIClient("", o.CommandRunner)
 	}
@@ -143,7 +143,7 @@ func (o *UpgradeOptions) Run() error {
 	return o.MigrateToHelm3(jxClient, ns, envs)
 }
 
-func (o *UpgradeOptions) getDevAndRequirements(envs *v1.EnvironmentList, ns string) (*v1.Environment, *config.RequirementsConfig, error) {
+func (o *Options) getDevAndRequirements(envs *v1.EnvironmentList, ns string) (*v1.Environment, *config.RequirementsConfig, error) {
 	for i, env := range envs.Items {
 		if env.Name == "dev" {
 			requirements, err := config.GetRequirementsConfigFromTeamSettings(&env.Spec.TeamSettings)
@@ -157,7 +157,7 @@ func (o *UpgradeOptions) getDevAndRequirements(envs *v1.EnvironmentList, ns stri
 	return nil, nil, nil
 }
 
-func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
+func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 	gitter := o.Gitter
 	envSource := devEnv.Spec.Source
 	dir, err := o.gitCloneIfRequired(gitter, envSource)
@@ -283,7 +283,7 @@ func (o *UpgradeOptions) UpgradeHelm3(devEnv *v1.Environment) error {
 	return nil
 }
 
-func (o *UpgradeOptions) upgradeAvailable(versionsDir string, versionStreamRef string, upgradeRef string) (string, error) {
+func (o *Options) upgradeAvailable(versionsDir string, versionStreamRef string, upgradeRef string) (string, error) {
 	gitter := o.Gitter
 	var err error
 	if o.LatestRelease {
@@ -306,7 +306,7 @@ func (o *UpgradeOptions) upgradeAvailable(versionsDir string, versionStreamRef s
 	return upgradeRef, nil
 }
 
-func (o *UpgradeOptions) cloneVersionStream(versionStreamURL string, upgradeRef string, settings *v1.TeamSettings) (string, error) {
+func (o *Options) cloneVersionStream(versionStreamURL string, upgradeRef string, settings *v1.TeamSettings) (string, error) {
 	gitter := o.Gitter
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -319,7 +319,7 @@ func (o *UpgradeOptions) cloneVersionStream(versionStreamURL string, upgradeRef 
 	return versionsDir, nil
 }
 
-func (o *UpgradeOptions) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *v1.EnvironmentList) error {
+func (o *Options) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *v1.EnvironmentList) error {
 	u := &upgrader.HelmfileUpgrader{
 		Environments:         envs.Items,
 		OverrideRequirements: &o.OverrideRequirements,
@@ -394,7 +394,7 @@ func (o *UpgradeOptions) MigrateToHelm3(jxClient versioned.Interface, ns string,
 	return o.EnvFactory.CreateDevEnvGitRepository(dir, req.Cluster.EnvironmentGitPublic)
 }
 
-func (o *UpgradeOptions) removeGeneratedRequirementsValuesFile(dir string) error {
+func (o *Options) removeGeneratedRequirementsValuesFile(dir string) error {
 	// lets remove the extra yaml file used during the boot process (we should disable this via a flag via changing the jx code)
 	requirementsValuesFile := filepath.Join(dir, config.RequirementsValuesFileName)
 	exists, err := util.FileExists(requirementsValuesFile)
@@ -410,7 +410,7 @@ func (o *UpgradeOptions) removeGeneratedRequirementsValuesFile(dir string) error
 	return nil
 }
 
-func (o *UpgradeOptions) addAndRemoveFiles(dir string, jxClient versioned.Interface, ns string) error {
+func (o *Options) addAndRemoveFiles(dir string, jxClient versioned.Interface, ns string) error {
 	err := o.removeOldDirs(dir)
 	if err != nil {
 		return err
@@ -441,7 +441,7 @@ func (o *UpgradeOptions) addAndRemoveFiles(dir string, jxClient versioned.Interf
 
 // addMissingFiles if the current dir is an old helm 2 style repository
 // lets copy across any new directories/files from the template git repository
-func (o *UpgradeOptions) addMissingFiles(dir string) error {
+func (o *Options) addMissingFiles(dir string) error {
 	templateDir := ""
 	lazyCloneTemplates := func() error {
 		if templateDir == "" {
@@ -454,7 +454,7 @@ func (o *UpgradeOptions) addMissingFiles(dir string) error {
 		return nil
 	}
 
-	files := []string{"environments.yaml", "helmfile.yaml", "jx-apps.yml"}
+	fileNames := []string{"environments.yaml", "helmfile.yaml", "jx-apps.yml"}
 	dirs := []string{"apps", "repositories", "system"}
 	for _, name := range dirs {
 		d := filepath.Join(dir, name)
@@ -473,7 +473,7 @@ func (o *UpgradeOptions) addMissingFiles(dir string) error {
 			}
 		}
 	}
-	for _, name := range files {
+	for _, name := range fileNames {
 		f := filepath.Join(dir, name)
 		exists, err := util.FileExists(f)
 		if err != nil {
@@ -494,7 +494,7 @@ func (o *UpgradeOptions) addMissingFiles(dir string) error {
 }
 
 // removeOldDirs lets remove any old files/directories from the helm 2.x style git repository
-func (o *UpgradeOptions) removeOldDirs(dir string) error {
+func (o *Options) removeOldDirs(dir string) error {
 	oldDirs := []string{"env", "systems", "kubeProviders", "prowConfig"}
 	for _, od := range oldDirs {
 		oldDir := filepath.Join(dir, od)
@@ -514,7 +514,7 @@ func (o *UpgradeOptions) removeOldDirs(dir string) error {
 }
 
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
-func (o *UpgradeOptions) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface, ns string, outDir string) error {
+func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface, ns string, outDir string) error {
 	// lets write the SourceRepository resources to the repositories folder...
 	srList, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -528,7 +528,7 @@ func (o *UpgradeOptions) writeAdditionalHelmTemplateFiles(jxClient versioned.Int
 }
 
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
-func (o *UpgradeOptions) writeNonHelmManagedResources(jxClient versioned.Interface, ns string, dir string) error {
+func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns string, dir string) error {
 	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrapf(err, "failed to query the PipelineActivity resources in namespace %s", ns)
@@ -561,7 +561,7 @@ func (o *UpgradeOptions) writeNonHelmManagedResources(jxClient versioned.Interfa
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
 // otherwise lets make a temporary directory and clone the git repository specified
 // or if there is none make a new one
-func (o *UpgradeOptions) gitCloneIfRequired(gitter gitclient.Interface, devSource v1.EnvironmentRepository) (string, error) {
+func (o *Options) gitCloneIfRequired(gitter gitclient.Interface, devSource v1.EnvironmentRepository) (string, error) {
 	if o.GitCredentials {
 		err := o.getGitCredentials()
 		if err != nil {
@@ -609,7 +609,7 @@ func (o *UpgradeOptions) gitCloneIfRequired(gitter gitclient.Interface, devSourc
 
 // replacePipeline if the `jenkins-x.yml` file is missing or does use the helm 3 / helmfile style configuration
 // lets replace with the new pipeline file
-func (o *UpgradeOptions) replacePipeline(dir string) error {
+func (o *Options) replacePipeline(dir string) error {
 	/* TODO
 	projectConfig, fileName, err := config.LoadProjectConfig(dir)
 	if err != nil {
@@ -629,7 +629,7 @@ func (o *UpgradeOptions) replacePipeline(dir string) error {
 	return nil
 }
 
-func (o *UpgradeOptions) createPullRequest(dir string, kind string, title string) error {
+func (o *Options) createPullRequest(dir string, kind string, title string) error {
 	remote := "origin"
 
 	log.Logger().Infof("pushing commits to ")
@@ -677,7 +677,7 @@ func (o *UpgradeOptions) createPullRequest(dir string, kind string, title string
 	return nil
 }
 
-func (o *UpgradeOptions) getGitCredentials() error {
+func (o *Options) getGitCredentials() error {
 	/*  TODO
 
 	log.Logger().Infof("setting up git credentials")

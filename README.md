@@ -1,4 +1,4 @@
-# jx alpha remote
+# jx admin
 
 [![Documentation](https://godoc.org/github.com/jenkins-x/jx-admin?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx-admin)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx-admin)](https://goreportcard.com/report/github.com/jenkins-x/jx-admin)
@@ -8,7 +8,7 @@
 
 `jx-admin` is a small command line tool for System Administrators install / upgrade kubernetes applications such as [Jenkins X](https://jenkins-x.io/) via GitOps and immutable infrastructure.
 
-`jx-admin`  is based on [helm 3.x](https://helm.sh/) and [helmfile](https://github.com/roboll/helmfile) under the covers.
+`jx-admin`  is based on [helm 3.x](https://helm.sh/) 
 
 ## Commands
 
@@ -20,10 +20,10 @@ First create your kubernetes cluster. If you are using Google Cloud you can try 
  
 If not try the [usual Jenkins X way](https://jenkins-x.io/docs/getting-started/setup/create-cluster/).
 
-Now run the `jx alpha remote create` command:
+Now run the `jx admin create` command:
 
 ``` 
-jx alpha remote create
+jx admin create
 ```
 
 This will create a new git repository for your installation.
@@ -38,7 +38,7 @@ To populate the Secrets run:
 
 
 ```
-jx alpha remote secrets edit
+jx secret edit
 ```                  
 
 This will prompt you to enter all the missing Secrets required.
@@ -49,13 +49,13 @@ This will prompt you to enter all the missing Secrets required.
 You can export the current secrets to the file system via
 
 ```
-jx alpha remote secrets export -f /tmp/mysecrets.yaml
+jx secret export -f /tmp/mysecrets.yaml
 ```                  
 
 Or to view them on the terminal...
 
 ```
-jx alpha remote secrets export -c
+jx secret export -c
 ```                  
 
 If you have an existing secrets.yaml file on the file system that looks kinda like this (with the actual values included)...
@@ -75,33 +75,33 @@ secrets:
 Then you can import this YAML file via:
 
 ```
-jx alpha remote secrets import -f /tmp/mysecrets.yaml
+jx secret import -f /tmp/mysecrets.yaml
 ```                  
 
 ### Running the boot Job
 
-Once you have created your git repository via `jx alpha remote create` or `jx alpha remote upgrade` and populated the secrets as shown above you can run the boot `Job` via:
+Once you have created your git repository via `jx admin create` or `jx admin upgrade` and populated the secrets as shown above you can run the boot `Job` via:
 
 ```
-jx alpha remote run --git-url=https://github.com/myorg/env-mycluster-dev.git
+jx admin run --git-url=https://github.com/myorg/env-mycluster-dev.git
 ```
 
 Once you have booted up once you can omit the `git-url` argument as it can be discovered from the `dev` `Environment` resource:
 
 ```
-jx alpha remote run
+jx admin run
 ```
 
 This will use helm to install the boot Job and tail the log of the pod so you can see the boot job run. It looks like the boot process is running locally on your laptop but really it is all running inside a Pod inside Kubernetes.
 
 ## Upgrading a `jx install` or `jx boot` cluster on helm 2.x
 
-You can use the `jx alpha remote upgrade` command to help upgrade your existing Jenkins X cluster to helm 3 and helmfile.
+You can use the `jx admin upgrade` command to help upgrade your existing Jenkins X cluster to helm 3 and helmfile.
 
 Connect to the cluster you wish to migrate and run:
 
 ``` 
-jx alpha remote upgrade
+jx admin upgrade
 ```
 
 and follow the instructions.

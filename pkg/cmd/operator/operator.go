@@ -114,9 +114,9 @@ func (o *Options) Run() error {
 		}
 	}
 	if o.GitURL != "" {
-		o.GitURL, err = o.ensureHttpsURL(o.GitURL)
+		o.GitURL, err = o.ensureValidGitURL(o.GitURL)
 		if err != nil {
-			return errors.Wrapf(err, "failed to ensure the git URL is a HTTPS UrL")
+			return errors.Wrapf(err, "failed to ensure the git URL is valid")
 		}
 	}
 	helmBin, err := helmplugin.GetHelm3Binary()
@@ -168,7 +168,7 @@ func (o *Options) Run() error {
 }
 
 func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
-	args := []string{"install"}
+	args := []string{"upgrade", "--install"}
 
 	if gitURL != "" {
 		args = append(args, "--set", fmt.Sprintf("url=%s", gitURL))
@@ -208,7 +208,7 @@ func (o *Options) findChartVersion(req *config.RequirementsConfig) (string, erro
 	return "", nil
 }
 
-func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
+func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return gitURL, errors.Wrapf(err, "failed to parse git URL")
@@ -229,7 +229,7 @@ func (o *Options) ensureHttpsURL(gitURL string) (string, error) {
 		}
 	}
 
-	log.Logger().Infof("git clone URL is %s now adding the user/password so we can clone it", util.ColorInfo(answer))
+	log.Logger().Infof("git clone URL is %s now adding the user/password so we can clone it inside kubernetes", util.ColorInfo(answer))
 
 	// TODO if not batch mode ask the user for a username / token?
 	if o.GitUserName == "" {

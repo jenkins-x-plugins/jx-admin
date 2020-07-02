@@ -23,9 +23,7 @@ func AddAndCommitFiles(gitter gitclient.Interface, dir string, message string) (
 	}
 	changes, err := gitclient.HasChanges(gitter, dir)
 	if err != nil {
-		if err != nil {
-			return changes, errors.Wrapf(err, "failed to check if there are changes")
-		}
+		return changes, errors.Wrapf(err, "failed to check if there are changes")
 	}
 	if !changes {
 		return changes, nil

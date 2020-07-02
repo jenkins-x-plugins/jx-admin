@@ -109,7 +109,7 @@ func TestCreate(t *testing.T) {
 		args = append(args, tc.Args...)
 		co.Args = args
 		co.Environment = tc.Environment
-		if !create.SupportHelm3ForDev && co.Environment == "" {
+		if co.Environment == "" {
 			co.Environment = "dev"
 		}
 		repoName := fmt.Sprintf("environment-%s-%s", tc.Name, co.Environment)
@@ -275,7 +275,7 @@ func AssertNoApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, mess
 // HasApp tests that the app config has the given app
 func HasApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, message string) (bool, []string) {
 	found := false
-	names := []string{}
+	var names []string
 	for _, app := range appConfig.Apps {
 		names = append(names, app.Name)
 		if app.Name == appName {

@@ -36,9 +36,9 @@ func (u *HelmfileUpgrader) ExportRequirements() (*config.RequirementsConfig, err
 			if u.DevSource.URL == "" {
 				u.DevSource = e.Spec.Source
 			}
-			config, err := config.GetRequirementsConfigFromTeamSettings(&e.Spec.TeamSettings)
-			if err == nil && config != nil {
-				answer = config
+			requirements, err := config.GetRequirementsConfigFromTeamSettings(&e.Spec.TeamSettings)
+			if err == nil && requirements != nil {
+				answer = requirements
 
 				// lets populate the input requirements so we can default the environment git values
 				if u.Requirements == nil {
