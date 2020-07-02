@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
+	"github.com/jenkins-x/jx-admin/pkg/cmd/plugins"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/version"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
@@ -27,5 +28,6 @@ func Main() *cobra.Command {
 	cmd.AddCommand(cobras.SplitCommand(operator.NewCmdOperator()))
 	cmd.AddCommand(cobras.SplitCommand(upgrade.NewCmdUpgrade()))
 	cmd.AddCommand(cobras.SplitCommand(version.NewCmdVersion()))
+	cmd.AddCommand(plugins.NewCmdPlugins())
 	return cmd
 }
