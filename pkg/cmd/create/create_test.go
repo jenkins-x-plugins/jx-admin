@@ -145,16 +145,13 @@ func TestCreate(t *testing.T) {
 			AssertNoApp(t, apps, "jenkins-x/chartmuseum", appMessage)
 			AssertNoApp(t, apps, "jenkins-x/nexus", appMessage)
 			AssertNoApp(t, apps, "jenkins-x/bucketrepo", appMessage)
-			AssertNoApp(t, apps, "repositories", appMessage)
 		case "remote":
 			AssertHasApp(t, apps, "jenkins-x/chartmuseum", appMessage)
 			AssertHasApp(t, apps, "jenkins-x/nexus", appMessage)
-			AssertHasApp(t, apps, "repositories", appMessage)
 			AssertNoApp(t, apps, "jenkins-x/bucketrepo", appMessage)
 
 		case "bucketrepo":
 			AssertHasApp(t, apps, "jenkins-x/bucketrepo", appMessage)
-			AssertHasApp(t, apps, "repositories", appMessage)
 			AssertNoApp(t, apps, "jenkins-x/chartmuseum", appMessage)
 			AssertNoApp(t, apps, "jenkins-x/nexus", appMessage)
 

@@ -174,7 +174,7 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 	}
 	if gitURL == "" {
 		if o.Environment == "dev" {
-			gitURL = common.DefaultBootHelmfileRepository
+			gitURL = common.DefaultBootRepository
 		} else {
 			gitURL = common.DefaultEnvironmentHelmfileGitRepoURL
 		}

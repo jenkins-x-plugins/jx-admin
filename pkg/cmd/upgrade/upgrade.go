@@ -26,14 +26,13 @@ import (
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-
-	"github.com/jenkins-x/jx-helpers/pkg/versionstream"
-	"github.com/jenkins-x/jx-helpers/pkg/versionstream/versionstreamrepo"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/pkg/versionstream"
+	"github.com/jenkins-x/jx-helpers/pkg/versionstream/versionstreamrepo"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,7 +92,7 @@ func (o *Options) AddUpgradeOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.LatestRelease, "latest-release", "", false, "upgrade to latest release tag")
 	cmd.Flags().BoolVarP(&o.GitCredentials, "git-credentials", "", false, "initialise the git credentials so that this step can be used inside a Job for use with private repositories")
 	cmd.Flags().StringVarP(&o.GitCloneURL, "git-url", "g", "", "The git repository to clone to upgrade")
-	cmd.Flags().StringVarP(&o.InitialGitURL, "initial-git-url", "", common.DefaultBootHelmfileRepository, "The git URL to clone to fetch the initial set of files for a helm 3 / helmfile based git configuration if this command is not run inside a git clone or against a GitOps based cluster")
+	cmd.Flags().StringVarP(&o.InitialGitURL, "initial-git-url", "", common.DefaultBootRepository, "The git URL to clone to fetch the initial set of files for a helm 3 / helmfile based git configuration if this command is not run inside a git clone or against a GitOps based cluster")
 	cmd.Flags().BoolVarP(&o.UsePullRequest, "use-pr", "", false, "If enabled lets force the use of a Pull Request rather than creating a new git repository for the helm 3 based configuration")
 
 	reqhelpers.AddGitRequirementsOptions(cmd, &o.OverrideRequirements)
@@ -454,25 +453,8 @@ func (o *Options) addMissingFiles(dir string) error {
 		return nil
 	}
 
-	fileNames := []string{"environments.yaml", "helmfile.yaml", "jx-apps.yml"}
-	dirs := []string{"apps", "repositories", "system"}
-	for _, name := range dirs {
-		d := filepath.Join(dir, name)
-		exists, err := util.DirExists(d)
-		if err != nil {
-			return errors.Wrapf(err, "failed to check dir exists %s", d)
-		}
-		if !exists {
-			err = lazyCloneTemplates()
-			if err != nil {
-				return err
-			}
-			err = util.CopyDirOverwrite(filepath.Join(templateDir, name), d)
-			if err != nil {
-				return errors.Wrapf(err, "failed to copy missing dir %s", d)
-			}
-		}
-	}
+	fileNames := []string{"jx-apps.yml"}
+
 	for _, name := range fileNames {
 		f := filepath.Join(dir, name)
 		exists, err := util.FileExists(f)
