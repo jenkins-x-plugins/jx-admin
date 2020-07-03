@@ -16,7 +16,7 @@ import (
 func Main() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   rootcmd.TopLevelCommand,
-		Short: "boots up Jenkins and/or Jenkins X in a Kubernetes cluster using GitOps",
+		Short: "commands for creating and upgrading Jenkins X environments using GitOps",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()
 			if err != nil {
