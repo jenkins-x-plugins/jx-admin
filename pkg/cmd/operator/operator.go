@@ -227,7 +227,14 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 	if u.User != nil {
 		user := u.User
 		pwd, f := user.Password()
-		if user.Username() != "" && pwd != "" && f {
+		username := user.Username()
+		if username != "" && pwd != "" && f {
+			if o.GitUserName == "" {
+				o.GitUserName = username
+			}
+			if o.GitToken == "" {
+				o.GitToken = pwd
+			}
 			return answer, nil
 		}
 	}

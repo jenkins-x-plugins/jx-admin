@@ -163,7 +163,7 @@ func (o *Options) Run() error {
 			return nil
 		}
 	}
-	return o.installGitOperator()
+	return o.installGitOperator(dir)
 }
 
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
@@ -253,14 +253,19 @@ func (o *Options) createPullRequestOnDevRepository(gitURL string, kind string) e
 	return o.EnvFactory.CreatePullRequest(dir, gitURL, kind, "", commitTitle, commitBody)
 }
 
-func (o *Options) installGitOperator() error {
+func (o *Options) installGitOperator(dir string) error {
 	userAuth := o.EnvFactory.UserAuth
 	if userAuth == nil {
 		return errors.Errorf("no UserAuth was created for the environment git repository")
 	}
 	op := o.Operator
+	op.Dir = dir
 	op.BatchMode = o.BatchMode
-	op.GitURL = o.InitialGitURL
+	gitURL := ""
+	if o.EnvFactory.CreatedScmRepository != nil {
+		gitURL = o.EnvFactory.CreatedScmRepository.Link
+	}
+	op.GitURL = gitURL
 	op.GitUserName = userAuth.Username
 	op.GitToken = userAuth.ApiToken
 	err := op.Run()

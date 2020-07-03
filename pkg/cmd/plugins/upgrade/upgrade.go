@@ -1,11 +1,11 @@
 package upgrade
 
 import (
+	"github.com/jenkins-x/jx-admin/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx-admin/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
