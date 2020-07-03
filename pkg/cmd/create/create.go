@@ -256,17 +256,18 @@ func (o *Options) installGitOperator() error {
 	if userAuth == nil {
 		return errors.Errorf("no UserAuth was created for the environment git repository")
 	}
+	op := o.Operator
 	if o.Requirements.Cluster.Namespace != "" {
-		o.Operator.Namespace = o.Requirements.Cluster.Namespace
+		op.Namespace = o.Requirements.Cluster.Namespace
 	}
-	o.Operator.BatchMode = o.BatchMode
-	o.Operator.GitURL = o.InitialGitURL
-	o.Operator.GitUserName = userAuth.Username
-	o.Operator.GitToken = userAuth.ApiToken
-	err := o.Run()
+	op.BatchMode = o.BatchMode
+	op.GitURL = o.InitialGitURL
+	op.GitUserName = userAuth.Username
+	op.GitToken = userAuth.ApiToken
+	err := op.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to install the git operator")
 	}
-	log.Logger().Infof("installed the git operator into namespace %s", util.ColorInfo(o.Operator.Namespace))
+	log.Logger().Infof("installed the git operator into namespace %s", util.ColorInfo(op.Namespace))
 	return nil
 }
