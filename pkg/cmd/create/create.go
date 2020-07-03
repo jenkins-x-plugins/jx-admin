@@ -92,6 +92,8 @@ func NewCmdCreate() (*cobra.Command, *Options) {
 
 	o.Operator.AddFlags(cmd)
 	o.EnvFactory.AddFlags(cmd)
+
+	cmd.Flags().StringVarP(&o.Operator.Namespace, "operator-namespace", "", operator.DefaultOperatorNamespace, "The name of the remote environment to create")
 	return cmd, o
 }
 
@@ -257,9 +259,6 @@ func (o *Options) installGitOperator() error {
 		return errors.Errorf("no UserAuth was created for the environment git repository")
 	}
 	op := o.Operator
-	if o.Requirements.Cluster.Namespace != "" {
-		op.Namespace = o.Requirements.Cluster.Namespace
-	}
 	op.BatchMode = o.BatchMode
 	op.GitURL = o.InitialGitURL
 	op.GitUserName = userAuth.Username

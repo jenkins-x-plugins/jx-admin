@@ -57,6 +57,9 @@ func bashExample(cli string) string {
 }
 
 const (
+	// DefaultOperatorNamespace the default namespace used to install the git operato
+	DefaultOperatorNamespace = "jx-git-operator"
+
 	defaultChartName = "jx-labs/jx-git-operator"
 )
 
@@ -78,7 +81,7 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitURL, "url", "u", "", "the git URL for the environment to boot using the operator. This is optional - the git operator Secret can be created later")
 	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "jx-git-operator", "the namespace to install the git operator")
+	command.Flags().StringVarP(&options.Namespace, "namespace", "n", DefaultOperatorNamespace, "the namespace to install the git operator")
 
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
