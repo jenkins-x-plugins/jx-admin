@@ -58,7 +58,7 @@ func bashExample(cli string) string {
 
 const (
 	// DefaultOperatorNamespace the default namespace used to install the git operato
-	DefaultOperatorNamespace = "jx-git-operator"
+	DefaultOperatorNamespace = "jx"
 
 	defaultChartName = "jx-labs/jx-git-operator"
 )
