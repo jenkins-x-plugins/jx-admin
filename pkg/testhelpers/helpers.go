@@ -16,7 +16,7 @@ import (
 )
 
 // AssertYamlEqual validates YAML without worrying about ordering of keys
-func AssertYamlEqual(t *testing.T, expected string, actual string, message string, args ...interface{}) {
+func AssertYamlEqual(t *testing.T, expected, actual, message string, args ...interface{}) {
 	expectedMap := map[string]interface{}{}
 	actualMap := map[string]interface{}{}
 
@@ -32,7 +32,7 @@ func AssertYamlEqual(t *testing.T, expected string, actual string, message strin
 }
 
 // AssertTextFilesEqual asserts that the expected file matches the actual file contents
-func AssertTextFilesEqual(t *testing.T, expected string, actual string, message string) {
+func AssertTextFilesEqual(t *testing.T, expected, actual, message string) {
 	require.FileExists(t, expected, "expected file for %s", message)
 	require.FileExists(t, actual, "actual file for %s", message)
 
@@ -57,7 +57,7 @@ func AssertTextFilesEqual(t *testing.T, expected string, actual string, message 
 }
 
 // AssertLabel asserts the object has the given label value
-func AssertLabel(t *testing.T, label string, expected string, objectMeta metav1.ObjectMeta, kindMessage string) {
+func AssertLabel(t *testing.T, label, expected string, objectMeta *metav1.ObjectMeta, kindMessage string) {
 	message := ObjectNameMessage(t, objectMeta, kindMessage)
 	labels := objectMeta.Labels
 	require.NotNil(t, labels, "no labels for %s", message)
@@ -67,7 +67,7 @@ func AssertLabel(t *testing.T, label string, expected string, objectMeta metav1.
 }
 
 // AssertAnnotation asserts the object has the given annotation value
-func AssertAnnotation(t *testing.T, annotation string, expected string, objectMeta metav1.ObjectMeta, kindMessage string) {
+func AssertAnnotation(t *testing.T, annotation, expected string, objectMeta *metav1.ObjectMeta, kindMessage string) {
 	message := ObjectNameMessage(t, objectMeta, kindMessage)
 	ann := objectMeta.Annotations
 	require.NotNil(t, ann, "no annotations for %s", message)
@@ -77,12 +77,12 @@ func AssertAnnotation(t *testing.T, annotation string, expected string, objectMe
 }
 
 // ObjectNameMessage returns an object name message used in the tests
-func ObjectNameMessage(t *testing.T, objectMeta metav1.ObjectMeta, kindMessage string) string {
+func ObjectNameMessage(t *testing.T, objectMeta *metav1.ObjectMeta, kindMessage string) string {
 	return fmt.Sprintf("%s for name %s", kindMessage, objectMeta.Name)
 }
 
 // AssertLabel asserts the object has the given label value
-func AssertSecretData(t *testing.T, key string, expected string, secret *corev1.Secret, kindMessage string) {
+func AssertSecretData(t *testing.T, key, expected string, secret *corev1.Secret, kindMessage string) {
 	require.NotNil(t, secret, "Secret is nil for %s", kindMessage)
 	name := secret.Name
 	require.NotEmpty(t, secret.Data, "Data is empty in Secret %s for %s", name, kindMessage)

@@ -11,12 +11,12 @@ import (
 
 const defaultHostname = "github.com"
 
-type configEntry struct {
+type ConfigEntry struct {
 	User  string
 	Token string `yaml:"oauth_token"`
 }
 
-func parseOrSetupConfigFile(fn string) (*configEntry, error) {
+func parseOrSetupConfigFile(fn string) (*ConfigEntry, error) {
 	entry, err := parseConfigFile(fn)
 	if err != nil {
 		return setupConfigFile(fn)
@@ -24,7 +24,7 @@ func parseOrSetupConfigFile(fn string) (*configEntry, error) {
 	return entry, err
 }
 
-func parseConfigFile(fn string) (*configEntry, error) {
+func parseConfigFile(fn string) (*ConfigEntry, error) {
 	f, err := os.Open(fn)
 	if err != nil {
 		return nil, err
@@ -34,11 +34,11 @@ func parseConfigFile(fn string) (*configEntry, error) {
 }
 
 // ParseDefaultConfig reads the configuration file
-func ParseDefaultConfig() (*configEntry, error) {
+func ParseDefaultConfig() (*ConfigEntry, error) {
 	return parseConfigFile(configFile())
 }
 
-func parseConfig(r io.Reader) (*configEntry, error) {
+func parseConfig(r io.Reader) (*ConfigEntry, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func parseConfig(r io.Reader) (*configEntry, error) {
 	}
 	for i := 0; i < len(config.Content[0].Content)-1; i += 2 {
 		if config.Content[0].Content[i].Value == defaultHostname {
-			var entries []configEntry
+			var entries []ConfigEntry
 			err = config.Content[0].Content[i+1].Decode(&entries)
 			if err != nil {
 				return nil, err

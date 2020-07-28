@@ -56,22 +56,22 @@ func (f *FakeHelmer) BuildDependency() error {
 	return nil
 }
 
-func (f *FakeHelmer) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
-	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
+func (f *FakeHelmer) InstallChart(chart, releaseName, ns, version string, timeout int,
+	values, valueStrings, valueFiles []string, repo, username, password string) error {
 	return nil
 }
 
-func (f *FakeHelmer) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool,
-	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
+func (f *FakeHelmer) UpgradeChart(chart, releaseName, ns, version string, install bool, timeout int, force, wait bool,
+	values, valueStrings, valueFiles []string, repo, username, password string) error {
 	return nil
 }
 
-func (f *FakeHelmer) FetchChart(chart string, version string, untar bool, untardir string, repo string, username string,
+func (f *FakeHelmer) FetchChart(chart, version string, untar bool, untardir, repo, username,
 	password string) error {
 	return nil
 }
 
-func (f *FakeHelmer) DeleteRelease(ns string, releaseName string, purge bool) error {
+func (f *FakeHelmer) DeleteRelease(ns, releaseName string, purge bool) error {
 	return nil
 }
 
@@ -87,11 +87,11 @@ func (f *FakeHelmer) PackageChart() error {
 	return nil
 }
 
-func (f *FakeHelmer) StatusRelease(ns string, releaseName string) error {
+func (f *FakeHelmer) StatusRelease(ns, releaseName string) error {
 	return nil
 }
 
-func (f *FakeHelmer) StatusReleaseWithOutput(ns string, releaseName string, format string) (string, error) {
+func (f *FakeHelmer) StatusReleaseWithOutput(ns, releaseName, format string) (string, error) {
 	return "", nil
 }
 
@@ -115,6 +115,6 @@ func (f *FakeHelmer) DecryptSecrets(location string) error {
 	return nil
 }
 
-func (f *FakeHelmer) Template(chartDir string, releaseName string, ns string, outputDir string, upgrade bool, values []string, valueStrings []string, valueFiles []string) error {
+func (f *FakeHelmer) Template(chartDir, releaseName, ns, outputDir string, upgrade bool, values, valueStrings, valueFiles []string) error {
 	return nil
 }

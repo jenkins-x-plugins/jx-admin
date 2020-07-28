@@ -23,10 +23,11 @@ func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceReposito
 		return nil, fmt.Errorf("output dir %s does not exist", outDir)
 	}
 
-	for _, sr := range srList.Items {
+	for k := range srList.Items {
+		sr := srList.Items[k]
 		labels := sr.Labels
 		if labels != nil {
-			if strings.ToLower(labels[kube.LabelGitSync]) == "false" {
+			if strings.EqualFold(strings.ToLower(labels[kube.LabelGitSync]), "false") {
 				continue
 			}
 		}

@@ -1,28 +1,28 @@
 package gitconfig
 
 // NewBlank initializes a blank Context suitable for testing
-func NewBlank() *blankContext {
-	return &blankContext{}
+func NewBlank() *BlankContext {
+	return &BlankContext{}
 }
 
 // A Context implementation that queries the filesystem
-type blankContext struct {
+type BlankContext struct {
 	authToken string
 	authLogin string
 }
 
-func (c *blankContext) AuthToken() (string, error) {
+func (c *BlankContext) AuthToken() (string, error) {
 	return c.authToken, nil
 }
 
-func (c *blankContext) SetAuthToken(t string) {
+func (c *BlankContext) SetAuthToken(t string) {
 	c.authToken = t
 }
 
-func (c *blankContext) SetAuthLogin(login string) {
+func (c *BlankContext) SetAuthLogin(login string) {
 	c.authLogin = login
 }
 
-func (c *blankContext) AuthLogin() (string, error) {
+func (c *BlankContext) AuthLogin() (string, error) {
 	return c.authLogin, nil
 }

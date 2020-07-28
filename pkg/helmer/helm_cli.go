@@ -30,7 +30,7 @@ func NewHelmCLI(cwd string) *HelmCLI {
 }
 
 // NewHelmCLIWithRunner creates a new HelmCLI interface for the given runner
-func NewHelmCLIWithRunner(runner util.Commander, binary string, cwd string, debug bool) *HelmCLI {
+func NewHelmCLIWithRunner(runner util.Commander, binary, cwd string, debug bool) *HelmCLI {
 	if runner == nil {
 		runner = &util.Command{
 			Name: binary,
@@ -77,7 +77,7 @@ func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
 }
 
 // Init executes the helm init command according with the given flags
-func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool) error {
+func (h *HelmCLI) Init(clientOnly bool, serviceAccount, tillerNamespace string, upgrade bool) error {
 	var args []string
 	args = append(args, "init")
 	if clientOnly {
@@ -124,7 +124,7 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	if err != nil {
 		// helm3 now returns an error if there are no repos
 		return repos, nil
-		//return nil, shouldError.Wrap(err, "failed to list repositories")
+		// return nil, shouldError.Wrap(err, "failed to list repositories")
 	}
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines[1:] {
@@ -237,8 +237,8 @@ func (h *HelmCLI) BuildDependency() error {
 }
 
 // InstallChart installs a helm chart according with the given flags
-func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
-	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
+func (h *HelmCLI) InstallChart(chart, releaseName, ns, version string, timeout int,
+	values, valueStrings, valueFiles []string, repo, username, password string) error {
 	var err error
 	var args []string
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
@@ -288,8 +288,8 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 }
 
 // FetchChart fetches a Helm Chart
-func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir string, repo string,
-	username string, password string) error {
+func (h *HelmCLI) FetchChart(chart, version string, untar bool, untardir, repo,
+	username, password string) error {
 	var args []string
 	args = append(args, "fetch", chart)
 	repo, err := addUsernamePasswordToURL(repo, username, password)
@@ -327,8 +327,8 @@ func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir 
 }
 
 // Template generates the YAML from the chart template to the given directory
-func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir string, upgrade bool,
-	values []string, valueStrings []string, valueFiles []string) error {
+func (h *HelmCLI) Template(chart, releaseName, ns, outDir string, upgrade bool,
+	values, valueStrings, valueFiles []string) error {
 	args := []string{"template", "--name", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug"}
 	if upgrade {
 		args = append(args, "--is-upgrade")
@@ -354,11 +354,12 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
+func (h *HelmCLI) UpgradeChart(chart, releaseName, ns, version string,
+	install bool, timeout int, force, wait bool, values, valueStrings,
+	valueFiles []string, repo, username, password string) error {
 	var err error
 	var args []string
-	args = append(args, "upgrade")
-	args = append(args, "--namespace", ns)
+	args = append(args, "upgrade", "--namespace", ns)
 	repo, err = addUsernamePasswordToURL(repo, username, password)
 	if err != nil {
 		return err
@@ -420,7 +421,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 }
 
 // DeleteRelease removes the given release
-func (h *HelmCLI) DeleteRelease(ns string, releaseName string, purge bool) error {
+func (h *HelmCLI) DeleteRelease(ns, releaseName string, purge bool) error {
 	var args []string
 	args = append(args, "delete")
 	if purge {
@@ -430,7 +431,7 @@ func (h *HelmCLI) DeleteRelease(ns string, releaseName string, purge bool) error
 	return h.runHelm(args...)
 }
 
-//ListReleases lists the releases in ns
+// ListReleases lists the releases in ns
 func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, error) {
 	output, err := h.runHelmWithOutput("list", "--all", "--namespace", ns)
 	if err != nil {
@@ -524,12 +525,12 @@ func (h *HelmCLI) FindChart() (string, error) {
 }
 
 // StatusRelease returns the output of the helm status command for a given release
-func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
+func (h *HelmCLI) StatusRelease(ns, releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
 // StatusReleaseWithOutput returns the output of the helm status command for a given release
-func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputFormat string) (string, error) {
+func (h *HelmCLI) StatusReleaseWithOutput(ns, releaseName, outputFormat string) (string, error) {
 	if outputFormat == "" {
 		return h.runHelmWithOutput("status", releaseName)
 	}
@@ -588,7 +589,7 @@ func (h *HelmCLI) DecryptSecrets(location string) error {
 
 // Helm really prefers to have the username and password embedded in the URL (ugh) so this
 // function makes that happen
-func addUsernamePasswordToURL(urlStr string, username string, password string) (string, error) {
+func addUsernamePasswordToURL(urlStr, username, password string) (string, error) {
 	if urlStr != "" && username != "" && password != "" {
 		u, err := url.Parse(urlStr)
 		if err != nil {

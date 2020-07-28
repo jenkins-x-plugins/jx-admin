@@ -189,7 +189,9 @@ func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
 		Args: args,
 	}
 }
-func (o *Options) findChartVersion(req *config.RequirementsConfig) (string, error) {
+
+//nolint
+func (o *Options) findChartVersion(_ *config.RequirementsConfig) (string, error) {
 	/*
 		if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {
 			// relative chart folder so ignore version

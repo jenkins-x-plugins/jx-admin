@@ -21,7 +21,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	//t.Parallel()
+	// t.Parallel()
 
 	type testCase struct {
 		Name        string
@@ -254,7 +254,7 @@ func TestCreate(t *testing.T) {
 }
 
 // AssertHasApp asserts that the given app name is in the generated apps YAML
-func AssertHasApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, message string) {
+func AssertHasApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) {
 	found, names := HasApp(t, appConfig, appName, message)
 	if !found {
 		assert.Fail(t, fmt.Sprintf("does not have the app %s for %s. Current apps are: %s", appName, message, strings.Join(names, ", ")))
@@ -262,7 +262,7 @@ func AssertHasApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, mes
 }
 
 // AssertNoApp asserts that the given app name is in the generated apps YAML
-func AssertNoApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, message string) {
+func AssertNoApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) {
 	found, names := HasApp(t, appConfig, appName, message)
 	if found {
 		assert.Fail(t, fmt.Sprintf("should not have the app %s for %s. Current apps are: %s", appName, message, strings.Join(names, ", ")))
@@ -270,10 +270,11 @@ func AssertNoApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, mess
 }
 
 // HasApp tests that the app config has the given app
-func HasApp(t *testing.T, appConfig *jxapps.AppConfig, appName string, message string) (bool, []string) {
+func HasApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) (bool, []string) {
 	found := false
 	var names []string
-	for _, app := range appConfig.Apps {
+	for k := range appConfig.Apps {
+		app := appConfig.Apps[k]
 		names = append(names, app.Name)
 		if app.Name == appName {
 			t.Logf("has app %s for %s", appName, message)

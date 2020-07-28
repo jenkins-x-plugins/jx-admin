@@ -198,7 +198,7 @@ func (o *EnvFactory) PushToGit(cloneURL string, userAuth *auth.UserAuth, dir str
 }
 
 // CreatePullRequest crates a pull request if there are git changes
-func (o *EnvFactory) CreatePullRequest(dir string, gitURL string, kind string, branchName string, commitTitle string, commitBody string) error {
+func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitle, commitBody string) error {
 	if gitURL == "" {
 		log.Logger().Infof("no git URL specified so cannot create a Pull Request. Changes have been saved to %s", dir)
 		return nil

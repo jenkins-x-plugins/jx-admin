@@ -34,9 +34,10 @@ type RequirementFlags struct {
 
 // GetDevEnvironmentConfig returns the dev environment for the given requirements or nil
 func GetDevEnvironmentConfig(requirements *config.RequirementsConfig) *config.EnvironmentConfig {
-	for i, e := range requirements.Environments {
+	for k := range requirements.Environments {
+		e := requirements.Environments[k]
 		if e.Key == "dev" {
-			return &requirements.Environments[i]
+			return &requirements.Environments[k]
 		}
 	}
 	return nil
@@ -144,7 +145,8 @@ func GetRequirementsFromGit(gitURL string) (*config.RequirementsConfig, error) {
 }
 
 // OverrideRequirements allows CLI overrides
-func OverrideRequirements(cmd *cobra.Command, args []string, dir string, customRequirementsFile string, outputRequirements *config.RequirementsConfig, flags *RequirementFlags, environment string) error {
+func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirementsFile string,
+	outputRequirements *config.RequirementsConfig, flags *RequirementFlags, environment string) error {
 	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return err
@@ -253,7 +255,7 @@ func UpgradeExistingRequirements(requirements *config.RequirementsConfig) {
 }
 
 // ValidateApps validates the apps match the requirements
-func ValidateApps(dir string, addApps []string, removeApps []string) (*jxapps.AppConfig, string, error) {
+func ValidateApps(dir string, addApps, removeApps []string) (*jxapps.AppConfig, string, error) {
 	requirements, _, err := config.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return nil, "", err
@@ -327,14 +329,15 @@ func shouldHaveCertManager(requirements *config.RequirementsConfig) bool {
 	return requirements.Ingress.TLS.Enabled && requirements.Ingress.TLS.SecretName == ""
 }
 
-func addApp(apps *jxapps.AppConfig, chartName string, beforeName, appsFileName string) bool {
+func addApp(apps *jxapps.AppConfig, chartName, beforeName, appsFileName string) bool {
 	idx := -1
-	for i, a := range apps.Apps {
+	for k := range apps.Apps {
+		a := apps.Apps[k]
 		switch a.Name {
 		case chartName:
 			return false
 		case beforeName:
-			idx = i
+			idx = k
 		}
 	}
 	app := jxapps.App{Name: chartName}
@@ -351,9 +354,10 @@ func addApp(apps *jxapps.AppConfig, chartName string, beforeName, appsFileName s
 }
 
 func removeApp(apps *jxapps.AppConfig, chartName, appsFileName string) bool {
-	for i, a := range apps.Apps {
+	for k := range apps.Apps {
+		a := apps.Apps[k]
 		if a.Name == chartName {
-			apps.Apps = append(apps.Apps[0:i], apps.Apps[i+1:]...)
+			apps.Apps = append(apps.Apps[0:k], apps.Apps[k+1:]...)
 			log.Logger().Infof("removed %s to %s", chartName, appsFileName)
 			return true
 		}
@@ -417,11 +421,12 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	}
 
 	if flags.EnvironmentRemote {
-		for i, e := range r.Environments {
+		for k := range r.Environments {
+			e := r.Environments[k]
 			if e.Key == "dev" {
 				continue
 			}
-			r.Environments[i].RemoteCluster = true
+			r.Environments[k].RemoteCluster = true
 		}
 	}
 

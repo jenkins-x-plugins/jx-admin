@@ -16,7 +16,7 @@ import (
 )
 
 // AddAndCommitFiles add and commits files
-func AddAndCommitFiles(gitter gitclient.Interface, dir string, message string) (bool, error) {
+func AddAndCommitFiles(gitter gitclient.Interface, dir, message string) (bool, error) {
 	_, err := gitter.Command(dir, "add", "*")
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to add files to git")
@@ -52,7 +52,7 @@ func CreateBranch(gitter gitclient.Interface, dir string) (string, error) {
 }
 
 // GitCloneToTempDir clones the git repository to either the given directory or create a temporary
-func GitCloneToTempDir(gitter gitclient.Interface, gitURL string, dir string) (string, error) {
+func GitCloneToTempDir(gitter gitclient.Interface, gitURL, dir string) (string, error) {
 	var err error
 	if dir != "" {
 		err = os.MkdirAll(dir, util.DefaultWritePermissions)
@@ -102,7 +102,7 @@ func AddUserTokenToURLIfRequired(gitURL, username, token string) (string, error)
 }
 
 // EnsureGitIgnoreContains ensures that the git ignore file in the given directory contains the given file
-func EnsureGitIgnoreContains(gitter gitclient.Interface, dir string, file string) error {
+func EnsureGitIgnoreContains(gitter gitclient.Interface, dir, file string) error {
 	path := filepath.Join(dir, ".gitignore")
 	exists, err := util.FileExists(path)
 	if err != nil {

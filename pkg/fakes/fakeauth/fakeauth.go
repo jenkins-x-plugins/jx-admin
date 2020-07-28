@@ -8,7 +8,7 @@ import (
 )
 
 // NewFakeAuthConfigService creates a fake git auth service
-func NewFakeAuthConfigService(t *testing.T, username string, token string, serverURLs ...string) auth.ConfigService {
+func NewFakeAuthConfigService(t *testing.T, username, token string, serverURLs ...string) auth.ConfigService {
 	svc := auth.NewMemoryAuthConfigService()
 	require.NotNil(t, svc, "no auth.ConfigService")
 	cfg := svc.Config()

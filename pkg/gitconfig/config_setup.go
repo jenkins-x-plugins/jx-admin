@@ -28,7 +28,7 @@ var (
 	oauthClientSecret = "3ee074dd53a806ff90865d0d2b4f30597429553e"
 )
 
-func setupConfigFile(filename string) (*configEntry, error) {
+func setupConfigFile(filename string) (*ConfigEntry, error) {
 	var verboseStream io.Writer
 	if strings.Contains(os.Getenv("DEBUG"), "oauth") {
 		verboseStream = os.Stderr
@@ -39,7 +39,7 @@ func setupConfigFile(filename string) (*configEntry, error) {
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		WriteSuccessHTML: func(w io.Writer) {
-			//noinspection GoPrintFunctions
+			// noinspection GoPrintFunctions
 			fmt.Fprintln(w, oauthSuccessPage)
 		},
 		VerboseStream: verboseStream,
@@ -60,12 +60,12 @@ func setupConfigFile(filename string) (*configEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	entry := configEntry{
+	entry := ConfigEntry{
 		User:  userLogin,
 		Token: token,
 	}
-	data := make(map[string][]configEntry)
-	data[flow.Hostname] = []configEntry{entry}
+	data := make(map[string][]ConfigEntry)
+	data[flow.Hostname] = []ConfigEntry{entry}
 
 	err = os.MkdirAll(filepath.Dir(filename), 0771)
 	if err != nil {

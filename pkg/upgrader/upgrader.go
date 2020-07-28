@@ -31,7 +31,8 @@ func (u *HelmfileUpgrader) ExportRequirements() (*config.RequirementsConfig, err
 	answer := config.NewRequirementsConfig()
 
 	// lets default the requirements first
-	for _, e := range u.Environments {
+	for k := range u.Environments {
+		e := u.Environments[k]
 		if e.Name == "dev" {
 			if u.DevSource.URL == "" {
 				u.DevSource = e.Spec.Source
@@ -51,7 +52,8 @@ func (u *HelmfileUpgrader) ExportRequirements() (*config.RequirementsConfig, err
 
 	// if the environment git owner is missing lets default it from the dev team settings
 	if answer.Cluster.EnvironmentGitOwner == "" {
-		for _, e := range u.Environments {
+		for k := range u.Environments {
+			e := u.Environments[k]
 			if e.Name == "dev" {
 				answer.Cluster.EnvironmentGitOwner = e.Spec.TeamSettings.EnvOrganisation
 				break
@@ -59,7 +61,8 @@ func (u *HelmfileUpgrader) ExportRequirements() (*config.RequirementsConfig, err
 		}
 	}
 
-	for _, e := range u.Environments {
+	for k := range u.Environments {
+		e := u.Environments[k]
 		env := u.GetOrCreateEnvironment(&e, answer)
 		env.PromotionStrategy = e.Spec.PromotionStrategy
 	}
