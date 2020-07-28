@@ -20,7 +20,7 @@ func New() Context {
 
 // A Context implementation that queries the filesystem
 type fsContext struct {
-	config    *configEntry
+	config    *ConfigEntry
 	authToken string
 }
 
@@ -33,7 +33,7 @@ func configFile() string {
 	return path.Join(ConfigDir(), "config.yml")
 }
 
-func (c *fsContext) getConfig() (*configEntry, error) {
+func (c *fsContext) getConfig() (*ConfigEntry, error) {
 	if c.config == nil {
 		entry, err := parseOrSetupConfigFile(configFile())
 		if err != nil {

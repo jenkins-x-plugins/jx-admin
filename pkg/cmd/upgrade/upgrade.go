@@ -143,10 +143,11 @@ func (o *Options) Run() error {
 }
 
 func (o *Options) getDevAndRequirements(envs *v1.EnvironmentList, ns string) (*v1.Environment, *config.RequirementsConfig, error) {
-	for i, env := range envs.Items {
+	for k := range envs.Items {
+		env := envs.Items[k]
 		if env.Name == "dev" {
 			requirements, err := config.GetRequirementsConfigFromTeamSettings(&env.Spec.TeamSettings)
-			devEnv := &envs.Items[i]
+			devEnv := &env
 			if err != nil {
 				return devEnv, requirements, errors.Wrapf(err, "could not get requirements from Environment %s in namespace %s", env.Name, ns)
 			}
@@ -159,7 +160,7 @@ func (o *Options) getDevAndRequirements(envs *v1.EnvironmentList, ns string) (*v
 func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 	gitter := o.Gitter
 	envSource := devEnv.Spec.Source
-	dir, err := o.gitCloneIfRequired(gitter, envSource)
+	dir, err := o.gitCloneIfRequired(envSource)
 	if err != nil {
 		return errors.Wrap(err, "failed to git clone development environment source")
 	}
@@ -282,7 +283,7 @@ func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 	return nil
 }
 
-func (o *Options) upgradeAvailable(versionsDir string, versionStreamRef string, upgradeRef string) (string, error) {
+func (o *Options) upgradeAvailable(versionsDir, versionStreamRef, upgradeRef string) (string, error) {
 	gitter := o.Gitter
 	var err error
 	if o.LatestRelease {
@@ -305,7 +306,7 @@ func (o *Options) upgradeAvailable(versionsDir string, versionStreamRef string, 
 	return upgradeRef, nil
 }
 
-func (o *Options) cloneVersionStream(versionStreamURL string, upgradeRef string, settings *v1.TeamSettings) (string, error) {
+func (o *Options) cloneVersionStream(versionStreamURL, upgradeRef string, settings *v1.TeamSettings) (string, error) {
 	gitter := o.Gitter
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -329,7 +330,7 @@ func (o *Options) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *
 		return errors.Wrapf(err, "failed to generate the JX Requirements from the cluster")
 	}
 
-	dir, err := o.gitCloneIfRequired(o.Gitter, u.DevSource)
+	dir, err := o.gitCloneIfRequired(u.DevSource)
 	if err != nil {
 		return err
 	}
@@ -496,7 +497,7 @@ func (o *Options) removeOldDirs(dir string) error {
 }
 
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
-func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface, ns string, outDir string) error {
+func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface, ns, outDir string) error {
 	// lets write the SourceRepository resources to the repositories folder...
 	srList, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -510,7 +511,7 @@ func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface,
 }
 
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
-func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns string, dir string) error {
+func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns, dir string) error {
 	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrapf(err, "failed to query the PipelineActivity resources in namespace %s", ns)
@@ -543,7 +544,7 @@ func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns 
 // gitCloneIfRequired if the specified directory is already a git clone then lets just use it
 // otherwise lets make a temporary directory and clone the git repository specified
 // or if there is none make a new one
-func (o *Options) gitCloneIfRequired(gitter gitclient.Interface, devSource v1.EnvironmentRepository) (string, error) {
+func (o *Options) gitCloneIfRequired(devSource v1.EnvironmentRepository) (string, error) {
 	if o.GitCredentials {
 		err := o.getGitCredentials()
 		if err != nil {
@@ -611,7 +612,7 @@ func (o *Options) replacePipeline(dir string) error {
 	return nil
 }
 
-func (o *Options) createPullRequest(dir string, kind string, title string) error {
+func (o *Options) createPullRequest(dir, kind, title string) error {
 	remote := "origin"
 
 	log.Logger().Infof("pushing commits to ")

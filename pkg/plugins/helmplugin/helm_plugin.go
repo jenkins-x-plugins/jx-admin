@@ -21,6 +21,6 @@ func NewHelm3Helmer(cwd string) (*helmer.HelmCLI, error) {
 }
 
 // NewHelmer creates a new helmer from the given binary
-func NewHelmer(helmBin string, cwd string) *helmer.HelmCLI {
+func NewHelmer(helmBin, cwd string) *helmer.HelmCLI {
 	return helmer.NewHelmCLIWithRunner(nil, helmBin, cwd, false)
 }

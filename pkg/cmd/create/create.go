@@ -201,7 +201,7 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 	return githelpers.GitCloneToTempDir(gitter, gitURL, dir)
 }
 
-func (o *Options) createPullRequestOnDevRepository(gitURL string, kind string) error {
+func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
 	cr := o.CreatedRepository
 	if cr == nil {
 		return errors.Errorf("no CreatedRepository available")
@@ -219,9 +219,10 @@ func (o *Options) createPullRequestOnDevRepository(gitURL string, kind string) e
 	// lets modify the requirements
 	idx := -1
 
-	for i, e := range requirements.Environments {
+	for k := range requirements.Environments {
+		e := requirements.Environments[k]
 		if e.Key == envKey {
-			idx = i
+			idx = k
 			break
 		}
 	}

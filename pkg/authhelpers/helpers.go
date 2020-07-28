@@ -39,7 +39,8 @@ func NewAuthFacade() (*AuthFacade, error) {
 }
 
 // NewAuthFacadeWithArgs creates a new auth facade with a set of arguments
-func NewAuthFacadeWithArgs(svc auth.ConfigService, gitter gitclient.Interface, ioFileHandles *files.IOFileHandles, batchMode bool, useGitHubOAuth bool) (*AuthFacade, error) {
+func NewAuthFacadeWithArgs(svc auth.ConfigService, gitter gitclient.Interface,
+	ioFileHandles *files.IOFileHandles, batchMode, useGitHubOAuth bool) (*AuthFacade, error) {
 	return &AuthFacade{
 		Service:        svc,
 		Gitter:         gitter,
@@ -53,7 +54,7 @@ func LocalGitAuthService() (auth.ConfigService, error) {
 	return createAuthConfigServiceFile(auth.GitAuthConfigFile, kube.ValueKindGit)
 }
 
-func createAuthConfigServiceFile(fileName string, serverKind string) (auth.ConfigService, error) {
+func createAuthConfigServiceFile(fileName, serverKind string) (auth.ConfigService, error) {
 	authService, err := auth.NewFileAuthConfigService(fileName, serverKind)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating the auth config service from file %s", fileName)
@@ -83,13 +84,13 @@ func (f *AuthFacade) GetService() (auth.ConfigService, error) {
 }
 
 // FindGitTokenForServer finds the git token and kind for the given server URL
-func (f *AuthFacade) FindGitTokenForServer(serverURL string, owner string) (string, string, error) {
+func (f *AuthFacade) FindGitTokenForServer(serverURL, owner string) (string, string, error) {
 	_, token, kind, err := f.FindGitUserTokenForServer(serverURL, owner)
 	return token, kind, err
 }
 
 // FindGitUserTokenForServer finds the git token and kind for the given server URL
-func (f *AuthFacade) FindGitUserTokenForServer(serverURL string, owner string) (string, string, string, error) {
+func (f *AuthFacade) FindGitUserTokenForServer(serverURL, owner string) (string, string, string, error) {
 	user := ""
 	token := ""
 	kind := ""
@@ -156,7 +157,7 @@ func (f *AuthFacade) FindGitUserTokenForServer(serverURL string, owner string) (
 }
 
 // ScmClient creates a new Scm client for the given git server, owner and kind
-func (f *AuthFacade) ScmClient(serverURL string, owner string, kind string) (*scm.Client, string, string, error) {
+func (f *AuthFacade) ScmClient(serverURL, owner, kind string) (*scm.Client, string, string, error) {
 	login := ""
 	token := ""
 	if kind == "" || kind == "github" {

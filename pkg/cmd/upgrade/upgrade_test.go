@@ -25,7 +25,7 @@ import (
 )
 
 func TestUpgrade(t *testing.T) {
-	//t.Parallel()
+	// t.Parallel()
 
 	ns := "jx"
 	sourceDir := filepath.Join("test_data")
@@ -133,7 +133,7 @@ func TestUpgrade(t *testing.T) {
 		assert.NoError(t, err, "failed to load expected requirements file %s for %s", expectedFile, name)
 		assert.FileExists(t, expectedFile, "expected requirements file for test %s", name)
 
-		//testhelpers.AssertYamlEqual(t, expectedFile, actualReqFile, "requirements for test %s", name)
+		// testhelpers.AssertYamlEqual(t, expectedFile, actualReqFile, "requirements for test %s", name)
 
 		// lets change the version stream tag to the dummy value so we can compare them better
 		switch name {
