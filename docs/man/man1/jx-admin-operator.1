@@ -44,12 +44,20 @@ Installs the git operator in a cluster
     help for operator
 
 .PP
+\fB\-\-max\-log\-duration\fP=30m0s
+    how long to wait for a boot Job pod to be ready to view its log
+
+.PP
 \fB\-\-name\fP="jxgo"
     the helm release name t ouse
 
 .PP
-\fB\-n\fP, \fB\-\-namespace\fP="jx\-git\-operator"
+\fB\-n\fP, \fB\-\-namespace\fP="jx"
     the namespace to install the git operator
+
+.PP
+\fB\-\-no\-log\fP[=false]
+    to disable viewing the logs of the boot Job pods
 
 .PP
 \fB\-\-token\fP=""
