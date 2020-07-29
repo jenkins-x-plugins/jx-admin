@@ -93,7 +93,7 @@ func NewCmdCreate() (*cobra.Command, *Options) {
 	o.Operator.AddFlags(cmd)
 	o.EnvFactory.AddFlags(cmd)
 
-	cmd.Flags().StringVarP(&o.Operator.Namespace, "operator-namespace", "", operator.DefaultOperatorNamespace, "The name of the remote environment to create")
+	cmd.Flags().StringVarP(&o.Operator.Namespace, "operator-namespace", "", common.DefaultOperatorNamespace, "The name of the remote environment to create")
 	return cmd, o
 }
 

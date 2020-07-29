@@ -5,7 +5,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
+	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/helmer"
 	"github.com/jenkins-x/jx-admin/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
@@ -23,16 +26,18 @@ import (
 
 // Options contains the command line arguments for this command
 type Options struct {
-	Dir          string
-	GitURL       string
-	GitUserName  string
-	GitToken     string
-	Namespace    string
-	ReleaseName  string
-	ChartName    string
-	ChartVersion string
-	DryRun       bool
-	BatchMode    bool
+	Dir           string
+	GitURL        string
+	GitUserName   string
+	GitToken      string
+	Namespace     string
+	ReleaseName   string
+	ChartName     string
+	ChartVersion  string
+	DryRun        bool
+	NoLog         bool
+	BatchMode     bool
+	JobLogOptions joblog.Options
 }
 
 var (
@@ -57,15 +62,17 @@ func bashExample(cli string) string {
 }
 
 const (
-	// DefaultOperatorNamespace the default namespace used to install the git operato
-	DefaultOperatorNamespace = "jx"
-
 	defaultChartName = "jx-labs/jx-git-operator"
 )
 
 // NewCmdRun creates the new command
 func NewCmdOperator() (*cobra.Command, *Options) {
 	options := &Options{}
+
+	// add defaults
+	_, jo := joblog.NewCmdJobLog()
+	options.JobLogOptions = *jo
+
 	command := &cobra.Command{
 		Use:     "operator",
 		Short:   "installs the git operator in a cluster",
@@ -81,7 +88,10 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitURL, "url", "u", "", "the git URL for the environment to boot using the operator. This is optional - the git operator Secret can be created later")
 	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", DefaultOperatorNamespace, "the namespace to install the git operator")
+	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace to install the git operator")
+	command.Flags().BoolVarP(&options.NoLog, "no-log", "", false, "to disable viewing the logs of the boot Job pods")
+
+	command.Flags().DurationVarP(&options.JobLogOptions.Duration, "max-log-duration", "", time.Minute*30, "how long to wait for a boot Job pod to be ready to view its log")
 
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
@@ -166,6 +176,14 @@ func (o *Options) Run() error {
 	_, err = c.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run command %s", commandLine)
+	}
+
+	if o.NoLog {
+		return nil
+	}
+	err = o.JobLogOptions.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to tail the Jenkins X boot Job pods")
 	}
 	return nil
 }
