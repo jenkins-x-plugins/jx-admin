@@ -174,8 +174,7 @@ func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsC
 
 	log.Logger().Infof("%s", info(fmt.Sprintf("git clone %s", link)))
 	log.Logger().Infof("%s", info(fmt.Sprintf("cd %s", gitInfo.Name)))
-	log.Logger().Infof("%s", info(fmt.Sprintf("%s secrets edit", common.BinaryName)))
-	log.Logger().Infof("%s", info(fmt.Sprintf("%s run", common.BinaryName)))
+	log.Logger().Infof("%s", info(fmt.Sprintf("%s admin operator", common.BinaryName)))
 	log.Logger().Infof("\n\n")
 	return nil
 }
