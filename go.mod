@@ -3,15 +3,15 @@ module github.com/jenkins-x/jx-admin
 require (
 	github.com/cli/cli v0.6.2
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/google/go-cmp v0.4.0
+	github.com/google/go-cmp v0.4.1
 	github.com/google/uuid v1.1.1
-	github.com/jenkins-x/go-scm v1.5.143
-	github.com/jenkins-x/jx-api v0.0.11
-	github.com/jenkins-x/jx-apps v0.0.3
+	github.com/jenkins-x/go-scm v1.5.151
+	github.com/jenkins-x/jx-api v0.0.17
+	github.com/jenkins-x/jx-apps v0.0.4
 	github.com/jenkins-x/jx-helpers v1.0.34
 	github.com/jenkins-x/jx-kube-client v0.0.8
-	github.com/jenkins-x/jx-logging v0.0.10
-	github.com/jenkins-x/jx/v2 v2.1.90
+	github.com/jenkins-x/jx-logging v0.0.11
+	github.com/jenkins-x/jx/v2 v2.1.121
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -19,8 +19,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
-	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/api v0.18.1
+	k8s.io/apimachinery v0.18.1
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 	k8s.io/kubernetes v1.14.0
 	sigs.k8s.io/yaml v1.2.0
