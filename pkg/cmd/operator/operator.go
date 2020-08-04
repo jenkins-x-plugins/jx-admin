@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+
 	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/helmer"
@@ -17,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
+	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -86,8 +90,8 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	}
 	command.Flags().StringVarP(&options.Dir, "dir", "d", ".", "the directory to discover the git URL if no url option is specified")
 	command.Flags().StringVarP(&options.GitURL, "url", "u", "", "the git URL for the environment to boot using the operator. This is optional - the git operator Secret can be created later")
-	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
-	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
+	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name the operator will use to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
+	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token the operator will use to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace to install the git operator")
 	command.Flags().BoolVarP(&options.NoLog, "no-log", "", false, "to disable viewing the logs of the boot Job pods")
 
@@ -261,13 +265,36 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 
 	log.Logger().Infof("git clone URL is %s now adding the user/password so we can clone it inside kubernetes", util.ColorInfo(answer))
 
-	// TODO if not batch mode ask the user for a username / token?
 	if o.GitUserName == "" {
-		return answer, util.MissingOption("username")
+		if !o.BatchMode {
+			i := survey.NewInput()
+			o.GitUserName, err = i.PickValue("Enter Bot Git username the Kubernetes operator will use to clone the environment git repository", "", true, "The Kubernetes Git Operator synchronises the environment git repository into the cluster")
+			if err != nil {
+				return answer, errors.Wrap(err, "failed to get git username")
+			}
+		} else {
+			return answer, util.MissingOption("username")
+		}
+
 	}
 	if o.GitToken == "" {
-		return answer, util.MissingOption("token")
+		if !o.BatchMode {
+			requirements, _, err := config.LoadRequirementsConfig(o.Dir, false)
+			if err != nil {
+				return answer, errors.Wrapf(err, "cannot load requirements file in dir %s so cannot determine git kind", o.Dir)
+			}
+			ff := files.GetIOFileHandles(nil)
+			giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Cluster.GitKind, requirements.Cluster.GitServer, o.GitUserName, ff.Out)
+			i := survey.NewInput()
+			o.GitToken, err = i.PickPassword("Enter Bot Git token the Kubernetes operator will use to clone the environment git repository", "The Kubernetes Git Operator synchronises the environment git repository into the cluster, the token only requires read repository permissions and the token is stored in a Kubernetes secrets the job acceses")
+			if err != nil {
+				return answer, errors.Wrap(err, "failed to get git password")
+			}
+		} else {
+			return answer, util.MissingOption("token")
+		}
 	}
+
 	u.User = url.UserPassword(o.GitUserName, o.GitToken)
 	answer = u.String()
 	return answer, nil
