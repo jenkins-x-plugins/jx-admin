@@ -171,11 +171,11 @@ func (o *Options) Validate() error {
 
 func verifyContainerName(pod *corev1.Pod, name string) error {
 	var names []string
-	for _, c := range pod.Spec.Containers {
-		if c.Name == name {
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name == name {
 			return nil
 		}
-		names = append(names, c.Name)
+		names = append(names, pod.Spec.Containers[i].Name)
 	}
 	sort.Strings(names)
 	return errors.Errorf("invalid container name %s for pod %s. Available names: %s", name, pod.Name, strings.Join(names, ", "))
