@@ -193,10 +193,19 @@ func (o *Options) Run() error {
 }
 
 func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
+	username := o.GitUserName
+	password := o.GitToken
+
 	args := []string{"upgrade", "--install"}
 
 	if gitURL != "" {
 		args = append(args, "--set", fmt.Sprintf("url=%s", gitURL))
+	}
+	if username != "" {
+		args = append(args, "--set", fmt.Sprintf("username=%s", username))
+	}
+	if password != "" {
+		args = append(args, "--set", fmt.Sprintf("password=%s", password))
 	}
 	if o.ChartVersion != "" {
 		args = append(args, "--version", o.ChartVersion)
@@ -294,10 +303,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			return answer, util.MissingOption("token")
 		}
 	}
-
-	u.User = url.UserPassword(o.GitUserName, o.GitToken)
-	answer = u.String()
-	return answer, nil
+	return gitURL, nil
 }
 
 func findGitURLFromDir(dir string) (string, error) {
