@@ -158,8 +158,8 @@ func (o *Options) Run() error {
 	// lets sanitize and format the command line so it looks nicer in the console output
 	// TODO replace with c.CLI() when we switch to jx-helpers
 	commandLine := fmt.Sprintf("%s %s", c.Name, strings.Join(c.Args, " "))
-	token := ""
-	if o.GitURL != "" {
+	token := o.GitToken
+	if o.GitURL != "" && token == "" {
 		u, err := url.Parse(o.GitURL)
 		if err == nil && u.User != nil {
 			token, _ = u.User.Password()
@@ -272,7 +272,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 		}
 	}
 
-	log.Logger().Infof("git clone URL is %s now adding the user/password so we can clone it inside kubernetes", util.ColorInfo(answer))
+	log.Logger().Infof("git clone URL is %s. Now verifying we have a username and password so that we can clone it inside kubernetes...", util.ColorInfo(answer))
 
 	if o.GitUserName == "" {
 		if !o.BatchMode {
@@ -303,6 +303,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			return answer, util.MissingOption("token")
 		}
 	}
+	log.Logger().Infof("git username is %s for URL %s and we have a valid password", util.ColorInfo(o.GitUserName), util.ColorInfo(answer))
 	return gitURL, nil
 }
 
