@@ -272,8 +272,11 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			if o.GitToken == "" {
 				o.GitToken = pwd
 			}
-			return answer, nil
 		}
+
+		// lets remove the user/pwd from the URL
+		u.User = nil
+		answer = u.String()
 	}
 
 	log.Logger().Infof("git clone URL is %s", util.ColorInfo(answer))
@@ -309,7 +312,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 		}
 	}
 	log.Logger().Infof("git username is %s for URL %s and we have a valid password", util.ColorInfo(o.GitUserName), util.ColorInfo(answer))
-	return gitURL, nil
+	return answer, nil
 }
 
 func findGitURLFromDir(dir string) (string, error) {
