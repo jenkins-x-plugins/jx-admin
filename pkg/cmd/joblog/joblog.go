@@ -32,7 +32,6 @@ type Options struct {
 	Selector      string
 	ContainerName string
 	Duration      time.Duration
-	MaxPods       int
 	NoTail        bool
 	BatchMode     bool
 	ErrOut        io.Writer
@@ -74,7 +73,6 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace where the boot jobs run")
 	command.Flags().StringVarP(&options.Selector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
 	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
-	command.Flags().IntVarP(&options.MaxPods, "max-pods", "", 3, "the maximum number of pods to wait for")
 	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a pod to be ready")
 
 	defaultBatchMode := false
@@ -119,6 +117,8 @@ func (o *Options) Run() error {
 		if stringhelpers.StringArrayIndex(foundPods, podName) < 0 {
 			foundPods = append(foundPods, podName)
 		}
+		logger.Logger().Infof("\ntailing boot Job pod %s\n\n", info(podName))
+
 		err = podlogs.TailLogs(ns, podName, containerName, o.ErrOut, o.Out)
 		if err != nil {
 			logger.Logger().Warnf("failed to tail log: %s", err.Error())
@@ -128,16 +128,19 @@ func (o *Options) Run() error {
 			return errors.Wrapf(err, "failed to get pod %s in namespace %s", podName, ns)
 		}
 		if pods.IsPodCompleted(pod) {
-			logger.Logger().Infof("the Job pod %s has completed successfully", info(podName))
-			return nil
-		}
-		logger.Logger().Warnf("Job pod %s is not completed but has status: %s", podName, pods.PodStatus(pod))
-
-		if o.MaxPods > 0 && len(foundPods) >= o.MaxPods {
-			logger.Logger().Warnf("processed the maximum allowed %d pods so terminating", len(foundPods))
-			return nil
+			logger.Logger().Infof("boot Job pod %s has %s", info(podName), info("succeeded"))
+		} else {
+			logger.Logger().Warnf("boot Job pod %s is not completed but has status: %s", podName, termcolor.ColorWarning(pods.PodStatus(pod)))
 		}
 
+		complete := false
+		complete, err = o.checkIfJobComplete(client, ns, selector)
+		if err != nil {
+			return errors.Wrapf(err, "failed to check if boot Job is complete")
+		}
+		if complete {
+			return nil
+		}
 		if time.Now().After(end) {
 			return errors.Errorf("timed out after waiting for duration %s", o.Duration.String())
 		}
@@ -167,6 +170,40 @@ func (o *Options) Validate() error {
 		}
 	}
 	return nil
+}
+
+func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns string, selector string) (bool, error) {
+	jobs, err := client.BatchV1().Jobs(ns).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to list jobs in namespace %s selector %s", ns, selector)
+	}
+	if len(jobs.Items) == 0 {
+		return false, errors.Errorf("could not find a Job in namespace %s with selector %s", ns, selector)
+	}
+
+	// lets find the newest job...
+	latest := jobs.Items[0]
+	for i := 1; i < len(jobs.Items); i++ {
+		job := jobs.Items[i]
+		if job.CreationTimestamp.After(latest.CreationTimestamp.Time) {
+			latest = job
+		}
+	}
+
+	info := termcolor.ColorInfo
+	if latest.Status.Active == 0 {
+		if latest.Status.Succeeded > 0 {
+			logger.Logger().Infof("boot Job %s has %s", info(latest.Name), info("succeeded"))
+			return true, nil
+		}
+		if latest.Status.Failed > 0 {
+			logger.Logger().Infof("boot Job %s has %s", info(latest.Name), termcolor.ColorError("failed"))
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func verifyContainerName(pod *corev1.Pod, name string) error {
