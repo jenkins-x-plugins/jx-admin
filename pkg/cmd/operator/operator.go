@@ -51,12 +51,14 @@ var (
 `)
 
 	cmdExample = templates.Examples(`
-* installs the git operator with the given git clone URL
-` + bashExample("operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git") + `
-* installs the git operator from inside a git clone 
-` + bashExample("operator --username mygituser --token mygittoken") + `
-* installs the git operator and prompt the user for missing information
+* installs the git operator from inside a git clone and prompt for the user/token if required 
 ` + bashExample("operator") + `
+* installs the git operator from inside a git clone specifying the user/token 
+` + bashExample("operator --username mygituser --token mygittoken") + `
+* installs the git operator with the given git clone URL
+` + bashExample("operator --url https://github.com/myorg/environment-mycluster-dev.git --username myuser --token myuser") + `
+* display what helm command will install the git operator
+` + bashExample("operator --dry-run") + `
 `)
 )
 
@@ -165,18 +167,20 @@ func (o *Options) Run() error {
 			token, _ = u.User.Password()
 		}
 	}
-	if token != "" {
+	if token != "" && !o.DryRun {
 		commandLine = strings.ReplaceAll(commandLine, token, "****")
 	}
 
 	// lets split the command across lines
 	commandLine = strings.ReplaceAll(commandLine, " --set", " \\\n    --set")
 
-	log.Logger().Infof("running command:\n\n%s\n\n", util.ColorInfo(commandLine))
-
 	if o.DryRun {
+		log.Logger().Infof("\nTo install the git operator run this command:\n\n%s\n\n", util.ColorInfo(commandLine))
 		return nil
 	}
+
+	log.Logger().Infof("running command:\n\n%s\n\n", util.ColorInfo(commandLine))
+
 	_, err = c.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run command %s", commandLine)
@@ -272,7 +276,8 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 		}
 	}
 
-	log.Logger().Infof("git clone URL is %s. Now verifying we have a username and password so that we can clone it inside kubernetes...", util.ColorInfo(answer))
+	log.Logger().Infof("git clone URL is %s", util.ColorInfo(answer))
+	log.Logger().Infof("now verifying we have a valid git username and token so that we can clone the git repository inside kubernetes...")
 
 	if o.GitUserName == "" {
 		if !o.BatchMode {

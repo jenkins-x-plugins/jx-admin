@@ -16,22 +16,28 @@ Installs the git operator in a cluster
 
 ### Examples
 
-  * installs the git operator with the given git clone URL
+  * installs the git operator from inside a git clone and prompt for the user/token if required
   
   ```bash
-  jx-admin operator --url https://$GIT_USERNAME:$GIT_TOKEN@github.com/myorg/environment-mycluster-dev.git
+  jx-admin operator
   ```
   
-  * installs the git operator from inside a git clone
+  * installs the git operator from inside a git clone specifying the user/token
   
   ```bash
   jx-admin operator --username mygituser --token mygittoken
   ```
   
-  * installs the git operator and prompt the user for missing information
+  * installs the git operator with the given git clone URL
   
   ```bash
-  jx-admin operator
+  jx-admin operator --url https://github.com/myorg/environment-mycluster-dev.git --username myuser --token myuser
+  ```
+  
+  * display what helm command will install the git operator
+  
+  ```bash
+  jx-admin operator --dry-run
   ```
 
 ### Options

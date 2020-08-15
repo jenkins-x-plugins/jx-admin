@@ -75,7 +75,7 @@ Installs the git operator in a cluster
 .SH EXAMPLE
 .RS
 .IP \(bu 2
-installs the git operator with the given git clone URL
+installs the git operator from inside a git clone and prompt for the user/token if required
 
 .br
 
@@ -85,14 +85,14 @@ installs the git operator with the given git clone URL
 .RS
 
 .nf
-  jx\-admin operator \-\-url https://$GIT\_USERNAME:$GIT\_TOKEN@github.com/myorg/environment\-mycluster\-dev.git
+  jx\-admin operator
 
 .fi
 .RE
 
 .RS
 .IP \(bu 2
-installs the git operator from inside a git clone
+installs the git operator from inside a git clone specifying the user/token
 
 .br
 
@@ -109,7 +109,7 @@ installs the git operator from inside a git clone
 
 .RS
 .IP \(bu 2
-installs the git operator and prompt the user for missing information
+installs the git operator with the given git clone URL
 
 .br
 
@@ -119,7 +119,24 @@ installs the git operator and prompt the user for missing information
 .RS
 
 .nf
-  jx\-admin operator
+  jx\-admin operator \-\-url https://github.com/myorg/environment\-mycluster\-dev.git \-\-username myuser \-\-token myuser
+
+.fi
+.RE
+
+.RS
+.IP \(bu 2
+display what helm command will install the git operator
+
+.br
+
+.RE
+
+.PP
+.RS
+
+.nf
+  jx\-admin operator \-\-dry\-run
 
 .fi
 .RE
