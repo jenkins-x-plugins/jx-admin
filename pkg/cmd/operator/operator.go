@@ -7,9 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx-helpers/pkg/files"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
-
 	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/helmer"
@@ -18,30 +15,36 @@ import (
 	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/pkg/kube"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // Options contains the command line arguments for this command
 type Options struct {
-	Dir           string
-	GitURL        string
-	GitUserName   string
-	GitToken      string
-	Namespace     string
-	ReleaseName   string
-	ChartName     string
-	ChartVersion  string
-	DryRun        bool
-	NoLog         bool
-	BatchMode     bool
-	JobLogOptions joblog.Options
+	Dir               string
+	GitURL            string
+	GitUserName       string
+	GitToken          string
+	Namespace         string
+	ReleaseName       string
+	ChartName         string
+	ChartVersion      string
+	DryRun            bool
+	NoSwitchNamespace bool
+	NoLog             bool
+	BatchMode         bool
+	JobLogOptions     joblog.Options
 }
 
 var (
@@ -96,6 +99,7 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token the operator will use to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace to install the git operator")
 	command.Flags().BoolVarP(&options.NoLog, "no-log", "", false, "to disable viewing the logs of the boot Job pods")
+	command.Flags().BoolVarP(&options.NoSwitchNamespace, "no-switch-namespace", "", false, "to disable switching to the installation namespace after installing the operator")
 
 	command.Flags().DurationVarP(&options.JobLogOptions.Duration, "max-log-duration", "", time.Minute*30, "how long to wait for a boot Job pod to be ready to view its log")
 
@@ -184,6 +188,11 @@ func (o *Options) Run() error {
 	_, err = c.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run command %s", commandLine)
+	}
+
+	err = o.switchNamespace(o.Namespace)
+	if err != nil {
+		return errors.Wrapf(err, "failed to switch the kubernetes namespace")
 	}
 
 	if o.NoLog {
@@ -314,6 +323,34 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 	log.Logger().Infof("git username is %s for URL %s and we have a valid password", util.ColorInfo(o.GitUserName), util.ColorInfo(answer))
 	return answer, nil
 }
+
+func (o *Options) switchNamespace(ns string) error {
+	if o.NoSwitchNamespace {
+		log.Logger().Infof("disabled switching namespace. Please make sure you are in the %s namespace when you try to create or import a project", ns)
+		return nil
+	}
+	cfg, pathOptions, err := kubeclient.LoadConfig()
+	if err != nil {
+		return errors.Wrap(err, "loading Kubernetes configuration")
+	}
+	ctx := kube.CurrentContext(cfg)
+	if ctx == nil {
+		log.Logger().Warnf("there is no context defined in your Kubernetes configuration so cannot change to namepace %s - we may be inside a test case or pod?", ns)
+		return nil
+	}
+
+	if ctx.Namespace == ns {
+		return nil
+	}
+	ctx.Namespace = ns
+	err = clientcmd.ModifyConfig(pathOptions, *cfg, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update the kube config to namepace %s", ns)
+	}
+	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", util.ColorInfo(ns))
+	return nil
+}
+
 
 func findGitURLFromDir(dir string) (string, error) {
 	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
