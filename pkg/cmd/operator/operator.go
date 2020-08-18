@@ -19,8 +19,8 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
-	"github.com/jenkins-x/jx-helpers/pkg/kube"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/pkg/kube"
 	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
@@ -312,7 +312,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			ff := files.GetIOFileHandles(nil)
 			giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Cluster.GitKind, requirements.Cluster.GitServer, o.GitUserName, ff.Out)
 			i := survey.NewInput()
-			o.GitToken, err = i.PickPassword("Enter Bot Git token the Kubernetes operator will use to clone the environment git repository", "The Kubernetes Git Operator synchronises the environment git repository into the cluster, the token only requires read repository permissions and the token is stored in a Kubernetes secrets the job acceses")
+			o.GitToken, err = i.PickPassword("Enter Bot Git token the Kubernetes operator will use to clone the environment git repository", "The Kubernetes Git Operator synchronises the environment git repository into the cluster, the token only requires read repository permissions and the token is stored in a Kubernetes secrets the job access")
 			if err != nil {
 				return answer, errors.Wrap(err, "failed to get git password")
 			}
@@ -350,7 +350,6 @@ func (o *Options) switchNamespace(ns string) error {
 	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", util.ColorInfo(ns))
 	return nil
 }
-
 
 func findGitURLFromDir(dir string) (string, error) {
 	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
