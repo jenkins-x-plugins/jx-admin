@@ -8,7 +8,7 @@ require (
 	github.com/jenkins-x/go-scm v1.5.156
 	github.com/jenkins-x/jx-api v0.0.17
 	github.com/jenkins-x/jx-apps v0.0.4
-	github.com/jenkins-x/jx-helpers v1.0.42
+	github.com/jenkins-x/jx-helpers v1.0.43
 	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.11
 	github.com/jenkins-x/jx/v2 v2.1.132
@@ -54,7 +54,5 @@ replace github.com/TV4/logrus-stackdriver-formatter => github.com/jenkins-x/logr
 replace k8s.io/test-infra => github.com/jenkins-x/test-infra v0.0.0-20200611142252-211a92405c22
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
-
-replace github.com/jenkins-x/jx-helpers => /workspace/go/src/github.com/jenkins-x/jx-helpers
 
 go 1.13

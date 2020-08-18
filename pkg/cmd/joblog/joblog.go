@@ -34,16 +34,23 @@ type Options struct {
 	Namespace     string
 	Selector      string
 	ContainerName string
+	CommitSHA     string
 	Duration      time.Duration
 	PollPeriod    time.Duration
 	NoTail        bool
 	BatchMode     bool
+	ShaMode       bool
 	ErrOut        io.Writer
 	Out           io.Writer
 	KubeClient    kubernetes.Interface
 	timeEnd       time.Time
 	podStatusMap  map[string]string
 }
+
+const (
+	// LabelCommitSHA the label added to git operator Jobs to indicate the commit sha
+	LabelCommitSHA = "git-operator.jenkins.io/commit-sha"
+)
 
 var (
 	cmdLong = templates.LongDesc(`
@@ -81,6 +88,8 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace where the boot jobs run")
 	command.Flags().StringVarP(&options.Selector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
 	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
+	command.Flags().StringVarP(&options.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
+	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
 	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
 	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
 
@@ -104,7 +113,12 @@ func (o *Options) Run() error {
 	containerName := o.ContainerName
 
 	info := termcolor.ColorInfo
-	logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s", info(selector), info(ns))
+	if o.CommitSHA != "" {
+		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s for commit SHA %s", info(selector), info(ns), info(o.CommitSHA))
+
+	} else {
+		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s", info(selector), info(ns))
+	}
 
 	o.timeEnd = time.Now().Add(o.Duration)
 
@@ -174,6 +188,13 @@ func (o *Options) Validate() error {
 	if o.Out == nil {
 		o.Out = os.Stdout
 	}
+	if o.ShaMode && o.CommitSHA == "" {
+		o.CommitSHA = os.Getenv("PULL_BASE_SHA")
+		if o.ShaMode && o.CommitSHA == "" {
+			return errors.Errorf("you have specified --sha-mode but no $PULL_BASE_SHA is defined or --commit-sha option supplied")
+		}
+	}
+
 	var err error
 	o.KubeClient, err = kube.LazyCreateKubeClient(o.KubeClient)
 	if err != nil {
@@ -195,8 +216,10 @@ func (o *Options) waitForLatestJob(client kubernetes.Interface, ns, selector str
 			return nil, errors.Wrapf(err, "failed to ")
 		}
 
-		if job != nil && !jobs.IsJobFinished(job) {
-			return job, nil
+		if job != nil {
+			if o.CommitSHA != "" || !jobs.IsJobFinished(job) {
+				return job, nil
+			}
 		}
 
 		if time.Now().After(o.timeEnd) {
@@ -250,6 +273,19 @@ func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string)
 		return nil, errors.Wrapf(err, "failed to list jobList in namespace %s selector %s", ns, selector)
 	}
 	if len(jobList.Items) == 0 {
+		return nil, nil
+	}
+
+	if o.CommitSHA != "" {
+		for i := 0; i < len(jobList.Items); i++ {
+			job := &jobList.Items[i]
+			labels := job.Labels
+			if labels != nil {
+				if o.CommitSHA == labels[LabelCommitSHA] {
+					return job, nil
+				}
+			}
+		}
 		return nil, nil
 	}
 
