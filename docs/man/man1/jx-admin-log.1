@@ -24,12 +24,16 @@ Views the boot Job logs in the cluster
     Runs in batch mode without prompting for user input
 
 .PP
+\fB\-\-commit\-sha\fP=""
+    the git commit SHA of the git repository to query the boot Job for
+
+.PP
 \fB\-c\fP, \fB\-\-container\fP="job"
     the name of the container in the boot Job to log
 
 .PP
 \fB\-d\fP, \fB\-\-duration\fP=30m0s
-    how long to wait for a pod to be ready
+    how long to wait for a Job to be active and a Pod to be ready
 
 .PP
 \fB\-h\fP, \fB\-\-help\fP[=false]
@@ -40,8 +44,16 @@ Views the boot Job logs in the cluster
     the namespace where the boot jobs run
 
 .PP
+\fB\-\-poll\fP=1s
+    duration between polls for an active Job or Pod
+
+.PP
 \fB\-s\fP, \fB\-\-selector\fP="app=jx\-boot"
     the selector of the boot Job pods
+
+.PP
+\fB\-\-sha\-mode\fP[=false]
+    if \-\-commit\-sha is not specified then default the git commit SHA from $ and fail if it could not be found
 
 
 .SH EXAMPLE
