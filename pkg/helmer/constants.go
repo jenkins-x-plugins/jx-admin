@@ -4,6 +4,6 @@ const (
 	// ChartFileName file name for a chart
 	ChartFileName = "Chart.yaml"
 
-	// LabsChartRepository the default charts repo for the labs charts
-	LabsChartRepository = "https://storage.googleapis.com/jenkinsxio-labs-private/charts"
+	// JX3ChartRepository the default charts repo for the jx3 charts
+	JX3ChartRepository = "https://storage.googleapis.com/jenkinsxio/charts"
 )
