@@ -1,6 +1,4 @@
-FROM centos:7
-
-RUN yum install -y git
+FROM gcr.io/jenkinsxio/jx-cli-base:0.0.10
 
 ENTRYPOINT ["jx-admin"]
 
