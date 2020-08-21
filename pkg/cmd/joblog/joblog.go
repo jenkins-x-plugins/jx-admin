@@ -116,7 +116,7 @@ func (o *Options) Run() error {
 
 	o.timeEnd = time.Now().Add(o.Duration)
 
-	logger.Logger().Infof("waiting for the Git Operator to be ready in namespace %s...", ns)
+	logger.Logger().Infof("waiting for the Git Operator to be ready in namespace %s...", info(ns))
 
 	goPod, err := pods.WaitForPodSelectorToBeReady(client, ns, o.GitOperatorSelector, o.Duration)
 	if err != nil {
@@ -136,10 +136,10 @@ See: https://jenkins-x.io/docs/v3/guides/operator/
 
 	info := termcolor.ColorInfo
 	if o.CommitSHA != "" {
-		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s for commit SHA %s", info(selector), info(ns), info(o.CommitSHA))
+		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s for commit SHA %s...", info(selector), info(ns), info(o.CommitSHA))
 
 	} else {
-		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s", info(selector), info(ns))
+		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s...", info(selector), info(ns))
 	}
 
 	job, err := o.waitForLatestJob(client, ns, selector)
