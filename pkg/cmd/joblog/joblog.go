@@ -31,20 +31,21 @@ import (
 
 // Options contains the command line arguments for this command
 type Options struct {
-	Namespace     string
-	Selector      string
-	ContainerName string
-	CommitSHA     string
-	Duration      time.Duration
-	PollPeriod    time.Duration
-	NoTail        bool
-	BatchMode     bool
-	ShaMode       bool
-	ErrOut        io.Writer
-	Out           io.Writer
-	KubeClient    kubernetes.Interface
-	timeEnd       time.Time
-	podStatusMap  map[string]string
+	Namespace           string
+	JobSelector         string
+	GitOperatorSelector string
+	ContainerName       string
+	CommitSHA           string
+	Duration            time.Duration
+	PollPeriod          time.Duration
+	NoTail              bool
+	BatchMode           bool
+	ShaMode             bool
+	ErrOut              io.Writer
+	Out                 io.Writer
+	KubeClient          kubernetes.Interface
+	timeEnd             time.Time
+	podStatusMap        map[string]string
 }
 
 const (
@@ -86,7 +87,8 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 		},
 	}
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace where the boot jobs run")
-	command.Flags().StringVarP(&options.Selector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
+	command.Flags().StringVarP(&options.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
+	command.Flags().StringVarP(&options.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
 	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
 	command.Flags().StringVarP(&options.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
 	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
@@ -109,8 +111,28 @@ func (o *Options) Run() error {
 	}
 	ns := o.Namespace
 	client := o.KubeClient
-	selector := o.Selector
+	selector := o.JobSelector
 	containerName := o.ContainerName
+
+	o.timeEnd = time.Now().Add(o.Duration)
+
+	logger.Logger().Infof("waiting for the Git Operator to be ready in namespace %s...", ns)
+
+	goPod, err := pods.WaitForPodSelectorToBeReady(client, ns, o.GitOperatorSelector, o.Duration)
+	if err != nil {
+		return errors.Wrapf(err, "failed waiting for the git operator pod to be ready in namespace %s with selector %s", ns, o.GitOperatorSelector)
+	}
+	if goPod == nil {
+		logger.Logger().Infof(`Could not find the git operator. 
+
+Are you sure you have installed the git operator?
+
+See: https://jenkins-x.io/docs/v3/guides/operator/
+
+`)
+		return errors.Wrapf(err, "no git operator pod to be ready in namespace %s with selector %s", ns, o.GitOperatorSelector)
+	}
+	logger.Logger().Infof("the Git Operator is running in pod %s\n\n", info(goPod.Name))
 
 	info := termcolor.ColorInfo
 	if o.CommitSHA != "" {
@@ -119,8 +141,6 @@ func (o *Options) Run() error {
 	} else {
 		logger.Logger().Infof("waiting for boot Job pod with selector %s in namespace %s", info(selector), info(ns))
 	}
-
-	o.timeEnd = time.Now().Add(o.Duration)
 
 	job, err := o.waitForLatestJob(client, ns, selector)
 	if err != nil {
