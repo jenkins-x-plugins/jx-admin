@@ -11,7 +11,7 @@ require (
 	github.com/jenkins-x/jx-helpers v1.0.43
 	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.11
-	github.com/jenkins-x/jx/v2 v2.1.132
+	github.com/jenkins-x/jx/v2 v2.1.133
 	github.com/jenkins-x/lighthouse v0.0.726 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/petergtz/pegomock v2.7.0+incompatible
