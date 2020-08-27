@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-apps/pkg/jxapps"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner/fakerunner"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
@@ -134,47 +133,6 @@ func TestCreate(t *testing.T) {
 
 		t.Logf("test %s created dir %s\n", tc.Name, co.OutDir)
 
-		apps, appFileName, err := jxapps.LoadAppConfig(co.OutDir)
-		require.NoError(t, err, "failed to load the apps configuration in dir %s for test %s", co.OutDir, tc.Name)
-		appMessage := fmt.Sprintf("test %s for file %s", tc.Name, appFileName)
-
-		AssertHasApp(t, apps, "jenkins-x/lighthouse", appMessage)
-
-		switch tc.Name {
-		case "mystaging":
-			AssertNoApp(t, apps, "jenkins-x/chartmuseum", appMessage)
-			AssertNoApp(t, apps, "jenkins-x/nexus", appMessage)
-			AssertNoApp(t, apps, "jenkins-x/bucketrepo", appMessage)
-		case "remote":
-			AssertHasApp(t, apps, "jenkins-x/chartmuseum", appMessage)
-			AssertHasApp(t, apps, "jenkins-x/nexus", appMessage)
-			AssertNoApp(t, apps, "jenkins-x/bucketrepo", appMessage)
-
-		case "bucketrepo":
-			AssertHasApp(t, apps, "jenkins-x/bucketrepo", appMessage)
-			AssertNoApp(t, apps, "jenkins-x/chartmuseum", appMessage)
-			AssertNoApp(t, apps, "jenkins-x/nexus", appMessage)
-
-		case "tls":
-			AssertHasApp(t, apps, "jetstack/cert-manager", appMessage)
-			AssertHasApp(t, apps, "jx-labs/acme", appMessage)
-
-		case "tls-custom-secret":
-			AssertNoApp(t, apps, "jetstack/cert-manager", appMessage)
-			AssertNoApp(t, apps, "jx-labs/acme", appMessage)
-
-		case "istio":
-			AssertHasApp(t, apps, "jx-labs/istio", appMessage)
-			AssertNoApp(t, apps, "stable/nginx-ingress", appMessage)
-
-		case "add-remove":
-			AssertHasApp(t, apps, "jx-labs/istio", appMessage)
-			AssertHasApp(t, apps, "flagger/flagger", appMessage)
-			AssertNoApp(t, apps, "stable/nginx-ingress", appMessage)
-
-		case "kubernetes":
-			AssertHasApp(t, apps, "stable/docker-registry", appMessage)
-		}
 		assert.FileExists(t, outFileName, "did not generate the Git URL file")
 		data, err := ioutil.ReadFile(outFileName)
 		require.NoError(t, err, "failed to load file %s", outFileName)
@@ -251,35 +209,4 @@ func TestCreate(t *testing.T) {
 			t.Logf("has vault secret storage for test %s", tc.Name)
 		}
 	}
-}
-
-// AssertHasApp asserts that the given app name is in the generated apps YAML
-func AssertHasApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) {
-	found, names := HasApp(t, appConfig, appName, message)
-	if !found {
-		assert.Fail(t, fmt.Sprintf("does not have the app %s for %s. Current apps are: %s", appName, message, strings.Join(names, ", ")))
-	}
-}
-
-// AssertNoApp asserts that the given app name is in the generated apps YAML
-func AssertNoApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) {
-	found, names := HasApp(t, appConfig, appName, message)
-	if found {
-		assert.Fail(t, fmt.Sprintf("should not have the app %s for %s. Current apps are: %s", appName, message, strings.Join(names, ", ")))
-	}
-}
-
-// HasApp tests that the app config has the given app
-func HasApp(t *testing.T, appConfig *jxapps.AppConfig, appName, message string) (bool, []string) {
-	found := false
-	var names []string
-	for k := range appConfig.Apps {
-		app := appConfig.Apps[k]
-		names = append(names, app.Name)
-		if app.Name == appName {
-			t.Logf("has app %s for %s", appName, message)
-			found = true
-		}
-	}
-	return found, names
 }

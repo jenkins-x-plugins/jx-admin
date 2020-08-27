@@ -125,11 +125,6 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to override requirements in dir %s", dir)
 	}
 
-	_, _, err = reqhelpers.ValidateApps(dir, o.AddApps, o.RemoveApps)
-	if err != nil {
-		return errors.Wrapf(err, "failed to validate the apps based on requirements in dir %s", dir)
-	}
-
 	err = o.EnvFactory.VerifyPreInstall(o.DisableVerifyPackages, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to verify requirements in dir %s", dir)

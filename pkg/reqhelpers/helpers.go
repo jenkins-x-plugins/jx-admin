@@ -9,11 +9,9 @@ import (
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-apps/pkg/jxapps"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/naming"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
@@ -252,117 +250,6 @@ func UpgradeExistingRequirements(requirements *config.RequirementsConfig) {
 	requirements.GitOps = true
 	requirements.Helmfile = true
 	requirements.Webhook = config.WebhookTypeLighthouse
-}
-
-// ValidateApps validates the apps match the requirements
-func ValidateApps(dir string, addApps, removeApps []string) (*jxapps.AppConfig, string, error) {
-	requirements, _, err := config.LoadRequirementsConfig(dir, false)
-	if err != nil {
-		return nil, "", err
-	}
-	apps, appsFileName, err := jxapps.LoadAppConfig(dir)
-
-	modified := false
-	if requirements.Repository != config.RepositoryTypeNexus {
-		if removeApp(apps, "jenkins-x/nexus", appsFileName) {
-			modified = true
-		}
-	}
-	if requirements.Repository == config.RepositoryTypeBucketRepo {
-		if removeApp(apps, "jenkins-x/chartmuseum", appsFileName) {
-			modified = true
-		}
-		if addApp(apps, "jenkins-x/bucketrepo", "repositories", appsFileName) {
-			modified = true
-		}
-	}
-
-	/* TODO
-	if requirements.Ingress.Kind == config.IngressTypeIstio {
-		if removeApp(apps, "stable/nginx-ingress", appsFileName) {
-			modified = true
-		}
-		if addApp(apps, "jx-labs/istio", "jenkins-x/jxboot-helmfile-resources", appsFileName) {
-			modified = true
-		}
-	}
-	*/
-
-	if requirements.Cluster.Provider == cloud.KUBERNETES {
-		if addApp(apps, "stable/docker-registry", "jenkins-x/jxboot-helmfile-resources", appsFileName) {
-			modified = true
-		}
-	}
-
-	if shouldHaveCertManager(requirements) {
-		if addApp(apps, "jetstack/cert-manager", "jenkins-x/jxboot-helmfile-resources", appsFileName) {
-			modified = true
-		}
-		if addApp(apps, "jx-labs/acme", "jenkins-x/jxboot-helmfile-resources", appsFileName) {
-			modified = true
-		}
-		log.Logger().Infof("TLS required, please ensure you have setup any cloud resources as per the documentation //todo docs")
-	}
-
-	// add/remove any custom apps from the CLI
-	for _, app := range addApps {
-		if addApp(apps, app, "repositories", appsFileName) {
-			modified = true
-		}
-	}
-	for _, app := range removeApps {
-		if removeApp(apps, app, appsFileName) {
-			modified = true
-		}
-	}
-
-	if modified && apps != nil {
-		err = apps.SaveConfig(appsFileName)
-		if err != nil {
-			return apps, appsFileName, errors.Wrapf(err, "failed to save modified file %s", appsFileName)
-		}
-	}
-	return apps, appsFileName, err
-}
-
-func shouldHaveCertManager(requirements *config.RequirementsConfig) bool {
-	return requirements.Ingress.TLS.Enabled && requirements.Ingress.TLS.SecretName == ""
-}
-
-func addApp(apps *jxapps.AppConfig, chartName, beforeName, appsFileName string) bool {
-	idx := -1
-	for k := range apps.Apps {
-		a := apps.Apps[k]
-		switch a.Name {
-		case chartName:
-			return false
-		case beforeName:
-			idx = k
-		}
-	}
-	app := jxapps.App{Name: chartName}
-
-	// if we have a repositories chart lets add apps before that
-	if idx >= 0 {
-		newApps := append([]jxapps.App{app}, apps.Apps[idx:]...)
-		apps.Apps = append(apps.Apps[0:idx], newApps...)
-	} else {
-		apps.Apps = append(apps.Apps, app)
-	}
-	log.Logger().Infof("added %s to %s", chartName, appsFileName)
-	return true
-}
-
-func removeApp(apps *jxapps.AppConfig, chartName, appsFileName string) bool {
-	for k := range apps.Apps {
-		a := apps.Apps[k]
-		if a.Name == chartName {
-			apps.Apps = append(apps.Apps[0:k], apps.Apps[k+1:]...)
-			log.Logger().Infof("removed %s to %s", chartName, appsFileName)
-			return true
-		}
-	}
-	return false
 }
 
 func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *RequirementFlags) error {
