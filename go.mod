@@ -5,7 +5,7 @@ require (
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/google/go-cmp v0.4.1
 	github.com/google/uuid v1.1.1
-	github.com/jenkins-x/go-scm v1.5.156
+	github.com/jenkins-x/go-scm v1.5.159
 	github.com/jenkins-x/jx-api v0.0.17
 	github.com/jenkins-x/jx-helpers v1.0.43
 	github.com/jenkins-x/jx-kube-client v0.0.8

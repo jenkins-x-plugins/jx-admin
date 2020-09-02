@@ -2,6 +2,7 @@ package authhelpers
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/go-scm/scm/factory"
@@ -179,17 +180,31 @@ func (f *AuthFacade) ScmClient(serverURL, owner, kind string) (*scm.Client, stri
 	}
 	if login == "" || token == "" {
 		u, t, defaultKind, err := f.FindGitUserTokenForServer(serverURL, owner)
-		if err != nil {
-			return nil, token, "", err
-		}
 		if login == "" {
 			login = u
+		}
+		if login == "" {
+			login = os.Getenv("GIT_USER")
+		}
+		if login == "" {
+			login = os.Getenv("GIT_USERNAME")
 		}
 		if token == "" {
 			token = t
 		}
+		if token == "" {
+			token = os.Getenv("GIT_TOKEN")
+		}
 		if kind == "" {
 			kind = defaultKind
+		}
+		if err != nil {
+			if login != "" && token != "" {
+				// lets ignore batch errors if we have GIT_TOKEN defined and have found a valid login and user
+				err = nil
+			} else {
+				return nil, token, "", err
+			}
 		}
 	}
 
