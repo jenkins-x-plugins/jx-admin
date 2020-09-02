@@ -199,10 +199,7 @@ func (f *AuthFacade) ScmClient(serverURL, owner, kind string) (*scm.Client, stri
 			kind = defaultKind
 		}
 		if err != nil {
-			if login != "" && token != "" {
-				// lets ignore batch errors if we have GIT_TOKEN defined and have found a valid login and user
-				err = nil
-			} else {
+			if login == "" || token == "" {
 				return nil, token, "", err
 			}
 		}

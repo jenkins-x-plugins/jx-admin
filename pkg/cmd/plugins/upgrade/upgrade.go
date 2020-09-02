@@ -1,6 +1,9 @@
 package upgrade
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx-admin/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
@@ -24,6 +27,7 @@ var (
 // UpgradeOptions the options for upgrading a cluster
 type Options struct {
 	CommandRunner cmdrunner.CommandRunner
+	BinDir        string
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -40,15 +44,29 @@ func NewCmdUpgrade() (*cobra.Command, *Options) {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&o.BinDir, "bin", "", "", "if set creates a symlink in the bin dir to the plugin binary")
+
 	return cmd, o
 }
 
 // Run implements the command
 func (o *Options) Run() error {
 	log.Logger().Infof("checking we have the correct vault CLI version")
-	_, err := plugins.GetHelmBinary("")
+	bin, err := plugins.GetHelmBinary("")
 	if err != nil {
 		return errors.Wrapf(err, "failed to check vault binary")
+	}
+
+	if o.BinDir != "" {
+		f := filepath.Join(o.BinDir, "helm")
+		err = os.Remove(f)
+		if err != nil {
+			log.Logger().Warnf("failed to remove %s due to %s", f, err.Error())
+		}
+		err = os.Symlink(bin, f)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create symlink from %s to %s", bin, f)
+		}
 	}
 	return nil
 }
