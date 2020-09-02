@@ -14,6 +14,6 @@
 
 See the [jx-admin command reference](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-admin.md)
 
-## Creating a new installation
+## Using jx admin
 
 See the [Getting started guide](https://jenkins-x.io/docs/v3/getting-started/) for details
