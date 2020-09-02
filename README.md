@@ -16,5 +16,4 @@ See the [jx-admin command reference](https://github.com/jenkins-x/jx-promote/blo
 
 ## Creating a new installation
 
-
 See the [Getting started guide](https://jenkins-x.io/docs/v3/getting-started/) for details
