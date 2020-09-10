@@ -98,8 +98,13 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name the operator will use to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token the operator will use to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace to install the git operator")
+	command.Flags().StringVarP(&options.ReleaseName, "name", "", "jxgo", "the helm release name t ouse")
+	command.Flags().StringVarP(&options.ChartName, "chart", "", defaultChartName, "the chart name to use to install the git operator")
+	command.Flags().StringVarP(&options.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
+
 	command.Flags().BoolVarP(&options.NoLog, "no-log", "", false, "to disable viewing the logs of the boot Job pods")
 	command.Flags().BoolVarP(&options.NoSwitchNamespace, "no-switch-namespace", "", false, "to disable switching to the installation namespace after installing the operator")
+	command.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
 
 	command.Flags().DurationVarP(&options.JobLogOptions.Duration, "max-log-duration", "", time.Minute*30, "how long to wait for a boot Job pod to be ready to view its log")
 
@@ -107,29 +112,22 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	if os.Getenv("JX_BATCH_MODE") == "true" {
 		defaultBatchMode = true
 	}
-	command.PersistentFlags().BoolVarP(&options.BatchMode, "batch-mode", "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 
-	options.AddFlags(command)
+	//Todo: Do we really need a persistent flag here?
+	command.PersistentFlags().BoolVarP(&options.BatchMode, "batch-mode", "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 
 	return command, options
 }
 
-func (o *Options) AddFlags(command *cobra.Command) {
-	command.Flags().StringVarP(&o.ReleaseName, "name", "", "jxgo", "the helm release name t ouse")
-	command.Flags().StringVarP(&o.ChartName, "chart", "", defaultChartName, "the chart name to use to install the git operator")
-	command.Flags().StringVarP(&o.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
-	command.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
-}
-
 // Run installs the git operator chart
 func (o *Options) Run() error {
+	var err error
 	if o.GitUserName == "" {
 		o.GitUserName = os.Getenv("GIT_USERNAME")
 	}
 	if o.GitToken == "" {
 		o.GitToken = os.Getenv("GIT_TOKEN")
 	}
-	var err error
 	if o.GitURL == "" {
 		o.GitURL, err = findGitURLFromDir(o.Dir)
 		if err != nil {
