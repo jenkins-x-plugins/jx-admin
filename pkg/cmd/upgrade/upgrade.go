@@ -11,7 +11,6 @@ import (
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/envfactory"
-	"github.com/jenkins-x/jx-admin/pkg/githelpers"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-admin/pkg/upgrader"
@@ -21,11 +20,11 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/files"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx-api/pkg/config"
@@ -134,7 +133,7 @@ func (o *Options) Run() error {
 		if gitURL == "" {
 			return errors.Errorf("cannot upgrade helm 3 installation as the dev Environment in namespace %s has no spec.source.url property", ns)
 		}
-		log.Logger().Infof("checking if we need to upgrade the installation for repository %s", util.ColorInfo(gitURL))
+		log.Logger().Infof("checking if we need to upgrade the installation for repository %s", termcolor.ColorInfo(gitURL))
 		return o.UpgradeHelm3(dev)
 	}
 
@@ -185,12 +184,12 @@ func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 		return errors.Wrap(err, "failed to get check for available update")
 	}
 	if upgradeVersionRef == "" {
-		log.Logger().Infof("No version upgrade found for version stream %s ref %s", util.ColorInfo(reqsVersionStream.URL), util.ColorInfo(reqsVersionStream.Ref))
+		log.Logger().Infof("No version upgrade found for version stream %s ref %s", termcolor.ColorInfo(reqsVersionStream.URL), termcolor.ColorInfo(reqsVersionStream.Ref))
 		return nil
 	}
 
 	if requirements.VersionStream.Ref != upgradeVersionRef {
-		log.Logger().Infof("Upgrading version stream ref to %s", util.ColorInfo(upgradeVersionRef))
+		log.Logger().Infof("Upgrading version stream ref to %s", termcolor.ColorInfo(upgradeVersionRef))
 		requirements.VersionStream.Ref = upgradeVersionRef
 		modified = true
 	}
@@ -214,11 +213,11 @@ func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 
 		if version != "" {
 			if buildPackRef != version {
-				log.Logger().Infof("Upgrading build pack repository %s to version %s", util.ColorInfo(buildPackURL), util.ColorInfo(version))
+				log.Logger().Infof("Upgrading build pack repository %s to version %s", termcolor.ColorInfo(buildPackURL), termcolor.ColorInfo(version))
 				requirements.BuildPacks.BuildPackLibrary.GitRef = version
 				modified = true
 			} else {
-				log.Logger().Infof("Build pack repository %s already on version %s", util.ColorInfo(buildPackURL), util.ColorInfo(version))
+				log.Logger().Infof("Build pack repository %s already on version %s", termcolor.ColorInfo(buildPackURL), termcolor.ColorInfo(version))
 			}
 
 			/*
@@ -247,7 +246,7 @@ func (o *Options) UpgradeHelm3(devEnv *v1.Environment) error {
 		return nil
 	}
 
-	o.branchName, err = githelpers.CreateBranch(o.Gitter, dir)
+	o.branchName, err = gitclient.CreateBranch(o.Gitter, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create git branch in %s", dir)
 	}
@@ -299,10 +298,10 @@ func (o *Options) upgradeAvailable(versionsDir, versionStreamRef, upgradeRef str
 	}
 
 	if versionStreamRef == upgradeRef {
-		log.Logger().Infof(util.ColorInfo("No version stream upgrade available"))
+		log.Logger().Infof(termcolor.ColorInfo("No version stream upgrade available"))
 		return "", nil
 	}
-	log.Logger().Infof(util.ColorInfo("Version stream upgrade available"))
+	log.Logger().Infof(termcolor.ColorInfo("Version stream upgrade available"))
 	return upgradeRef, nil
 }
 
@@ -337,7 +336,7 @@ func (o *Options) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *
 	o.OutDir = dir
 
 	if o.gitRepositoryExisted {
-		o.branchName, err = githelpers.CreateBranch(o.Gitter, dir)
+		o.branchName, err = gitclient.CreateBranch(o.Gitter, dir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git branch in %s", dir)
 		}
@@ -359,14 +358,14 @@ func (o *Options) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *
 		return err
 	}
 
-	log.Logger().Infof("generated the latest cluster requirements configuration to %s", util.ColorInfo(reqFile))
+	log.Logger().Infof("generated the latest cluster requirements configuration to %s", termcolor.ColorInfo(reqFile))
 
 	err = o.addAndRemoveFiles(dir, jxClient, ns)
 	if err != nil {
 		return err
 	}
 
-	log.Logger().Infof("generated the boot configuration from the current cluster into the directory: %s", util.ColorInfo(dir))
+	log.Logger().Infof("generated the boot configuration from the current cluster into the directory: %s", termcolor.ColorInfo(dir))
 
 	// now lets add the generated files to git
 	_, err = o.Gitter.Command(dir, "add", "*")
@@ -397,7 +396,7 @@ func (o *Options) MigrateToHelm3(jxClient versioned.Interface, ns string, envs *
 func (o *Options) removeGeneratedRequirementsValuesFile(dir string) error {
 	// lets remove the extra yaml file used during the boot process (we should disable this via a flag via changing the jx code)
 	requirementsValuesFile := filepath.Join(dir, config.RequirementsValuesFileName)
-	exists, err := util.FileExists(requirementsValuesFile)
+	exists, err := files.FileExists(requirementsValuesFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check requirements values file exists %s", requirementsValuesFile)
 	}
@@ -422,7 +421,7 @@ func (o *Options) addAndRemoveFiles(dir string, jxClient versioned.Interface, ns
 	}
 
 	srOutDir := filepath.Join(dir, "repositories", "templates")
-	err = os.MkdirAll(srOutDir, util.DefaultWritePermissions)
+	err = os.MkdirAll(srOutDir, files.DefaultDirWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the SourceRepository output directory: %s", srOutDir)
 	}
@@ -445,7 +444,7 @@ func (o *Options) addMissingFiles(dir string) error {
 	templateDir := ""
 	lazyCloneTemplates := func() error {
 		if templateDir == "" {
-			dir, err := githelpers.GitCloneToTempDir(o.Gitter, o.InitialGitURL, "")
+			dir, err := gitclient.CloneToDir(o.Gitter, o.InitialGitURL, "")
 			if err != nil {
 				return errors.Wrapf(err, "failed to git clone %s", o.InitialGitURL)
 			}
@@ -458,7 +457,7 @@ func (o *Options) addMissingFiles(dir string) error {
 
 	for _, name := range fileNames {
 		f := filepath.Join(dir, name)
-		exists, err := util.FileExists(f)
+		exists, err := files.FileExists(f)
 		if err != nil {
 			return errors.Wrapf(err, "failed to check file exists %s", f)
 		}
@@ -467,7 +466,7 @@ func (o *Options) addMissingFiles(dir string) error {
 			if err != nil {
 				return err
 			}
-			err = util.CopyFile(filepath.Join(templateDir, name), f)
+			err = files.CopyFile(filepath.Join(templateDir, name), f)
 			if err != nil {
 				return errors.Wrapf(err, "failed to copy missing file %s", f)
 			}
@@ -481,7 +480,7 @@ func (o *Options) removeOldDirs(dir string) error {
 	oldDirs := []string{"env", "systems", "kubeProviders", "prowConfig"}
 	for _, od := range oldDirs {
 		oldDir := filepath.Join(dir, od)
-		exists, err := util.DirExists(oldDir)
+		exists, err := files.DirExists(oldDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to check dir exists %s", oldDir)
 		}
@@ -533,11 +532,11 @@ func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns,
 	}
 
 	fileName := filepath.Join(dir, common.PipelineActivitiesYAMLFile)
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, data, files.DefaultFileWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", fileName)
 	}
-	log.Logger().Infof("wrote migration resources file: %s", util.ColorInfo(common.PipelineActivitiesYAMLFile))
+	log.Logger().Infof("wrote migration resources file: %s", termcolor.ColorInfo(common.PipelineActivitiesYAMLFile))
 	return nil
 }
 
@@ -581,9 +580,9 @@ func (o *Options) gitCloneIfRequired(devSource v1.EnvironmentRepository) (string
 		}
 	}
 
-	log.Logger().Debugf("cloning %s to directory %s", util.ColorInfo(gitURL), util.ColorInfo(dir))
+	log.Logger().Debugf("cloning %s to directory %s", termcolor.ColorInfo(gitURL), termcolor.ColorInfo(dir))
 
-	dir, err = githelpers.GitCloneToTempDir(o.Gitter, gitURL, dir)
+	dir, err = gitclient.CloneToDir(o.Gitter, gitURL, dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}
@@ -622,7 +621,7 @@ func (o *Options) createPullRequest(dir, kind, title string) error {
 	}
 
 	gitURL := o.GitCloneURL
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	gitInfo, err := giturl.ParseGitURL(gitURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL")
 	}
@@ -656,7 +655,7 @@ func (o *Options) createPullRequest(dir, kind, title string) error {
 
 	// the URL should not really end in .diff - fix in go-scm
 	link := strings.TrimSuffix(pr.Link, ".diff")
-	log.Logger().Infof("created Pull Request %s in dir %s", util.ColorInfo(link), dir)
+	log.Logger().Infof("created Pull Request %s in dir %s", termcolor.ColorInfo(link), dir)
 	return nil
 }
 

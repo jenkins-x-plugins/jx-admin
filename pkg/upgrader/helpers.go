@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/kube"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
 func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceRepositoryList) ([]string, error) {
-	exists, err := util.DirExists(outDir)
+	exists, err := files.DirExists(outDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check if output dir exists %s", outDir)
 	}
@@ -39,7 +39,7 @@ func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceReposito
 		}
 
 		fileName := filepath.Join(outDir, sr.Name+".yaml")
-		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		err = ioutil.WriteFile(fileName, data, files.DefaultFileWritePermissions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to write file %s for SourceRepository %s to YAML", fileName, sr.Name)
 		}

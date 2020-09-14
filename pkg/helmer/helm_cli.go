@@ -9,19 +9,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"k8s.io/kubernetes/pkg/util/slice"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
 // HelmCLI implements common helm actions based on helm CLI
 type HelmCLI struct {
-	Binary string
-	CWD    string
-	Runner util.Commander
-	Debug  bool
+	Binary  string
+	CWD     string
+	Runner  cmdrunner.CommandRunner
+	Command *cmdrunner.Command
+	Debug   bool
 }
 
 // NewHelmCLI creates a new CLI
@@ -30,18 +33,20 @@ func NewHelmCLI(cwd string) *HelmCLI {
 }
 
 // NewHelmCLIWithRunner creates a new HelmCLI interface for the given runner
-func NewHelmCLIWithRunner(runner util.Commander, binary, cwd string, debug bool) *HelmCLI {
+func NewHelmCLIWithRunner(runner cmdrunner.CommandRunner, binary, cwd string, debug bool) *HelmCLI {
+	command := &cmdrunner.Command{
+		Name: binary,
+		Dir:  cwd,
+	}
 	if runner == nil {
-		runner = &util.Command{
-			Name: binary,
-			Dir:  cwd,
-		}
+		runner = cmdrunner.DefaultCommandRunner
 	}
 	cli := &HelmCLI{
-		Binary: binary,
-		CWD:    cwd,
-		Runner: runner,
-		Debug:  debug,
+		Binary:  binary,
+		CWD:     cwd,
+		Command: command,
+		Runner:  runner,
+		Debug:   debug,
 	}
 	return cli
 }
@@ -62,18 +67,18 @@ func (h *HelmCLI) SetHelmBinary(binary string) {
 }
 
 func (h *HelmCLI) runHelm(args ...string) error {
-	h.Runner.SetDir(h.CWD)
-	h.Runner.SetName(h.Binary)
-	h.Runner.SetArgs(args)
-	_, err := h.Runner.RunWithoutRetry()
+	h.Command.SetDir(h.CWD)
+	h.Command.SetName(h.Binary)
+	h.Command.SetArgs(args)
+	_, err := h.Runner(h.Command)
 	return err
 }
 
 func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
-	h.Runner.SetDir(h.CWD)
-	h.Runner.SetName(h.Binary)
-	h.Runner.SetArgs(args)
-	return h.Runner.RunWithoutRetry()
+	h.Command.SetDir(h.CWD)
+	h.Command.SetName(h.Binary)
+	h.Command.SetArgs(args)
+	return h.Runner(h.Command)
 }
 
 // Init executes the helm init command according with the given flags
@@ -94,7 +99,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount, tillerNamespace string, 
 	}
 
 	if h.Debug {
-		log.Logger().Debugf("Initialising Helm '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Initialising Helm '%s'", termcolor.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -212,7 +217,7 @@ func (h *HelmCLI) UpdateRepo() error {
 func (h *HelmCLI) RemoveRequirementsLock() error {
 	dir := h.CWD
 	path := filepath.Join(dir, "requirements.lock")
-	exists, err := util.FileExists(path)
+	exists, err := files.FileExists(path)
 	if err != nil {
 		return errors.Wrapf(err, "no requirements.lock file found in directory '%s'", dir)
 	}
@@ -228,7 +233,7 @@ func (h *HelmCLI) RemoveRequirementsLock() error {
 // BuildDependency builds the helm dependencies of the helm chart from the current working directory
 func (h *HelmCLI) BuildDependency() error {
 	if h.Debug {
-		log.Logger().Infof("Running %s dependency build in %s\n", h.Binary, util.ColorInfo(h.CWD))
+		log.Logger().Infof("Running %s dependency build in %s\n", h.Binary, termcolor.ColorInfo(h.CWD))
 		out, err := h.runHelmWithOutput("dependency", "build")
 		log.Logger().Infof(out)
 		return err
@@ -276,7 +281,7 @@ func (h *HelmCLI) InstallChart(chart, releaseName, ns, version string, timeout i
 		args = append(args, "-v", logLevel)
 	}
 	if h.Debug {
-		log.Logger().Infof("Installing Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Installing Chart '%s'", termcolor.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
@@ -320,7 +325,7 @@ func (h *HelmCLI) FetchChart(chart, version string, untar bool, untardir, repo,
 	}
 
 	if h.Debug {
-		log.Logger().Infof("Fetching Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Fetching Chart '%s'", termcolor.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -344,7 +349,7 @@ func (h *HelmCLI) Template(chart, releaseName, ns, outDir string, upgrade bool,
 	}
 
 	if h.Debug {
-		log.Logger().Debugf("Generating Chart Template '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Debugf("Generating Chart Template '%s'", termcolor.ColorInfo(strings.Join(args, " ")))
 	}
 	err := h.runHelm(args...)
 	if err != nil {
@@ -409,7 +414,7 @@ func (h *HelmCLI) UpgradeChart(chart, releaseName, ns, version string,
 	args = append(args, releaseName, chart)
 
 	if h.Debug {
-		log.Logger().Infof("Upgrading Chart '%s'", util.ColorInfo(strings.Join(args, " ")))
+		log.Logger().Infof("Upgrading Chart '%s'", termcolor.ColorInfo(strings.Join(args, " ")))
 	}
 
 	err = h.runHelm(args...)
@@ -496,7 +501,7 @@ func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, 
 func (h *HelmCLI) FindChart() (string, error) {
 	dir := h.CWD
 	chartFile := filepath.Join(dir, ChartFileName)
-	exists, err := util.FileExists(chartFile)
+	exists, err := files.FileExists(chartFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "no Chart.yaml file found in directory '%s'", dir)
 	}
@@ -554,7 +559,7 @@ func (h *HelmCLI) Lint(valuesFiles []string) (string, error) {
 
 // Env returns the environment variables for the helmer
 func (h *HelmCLI) Env() map[string]string {
-	return h.Runner.CurrentEnv()
+	return h.Command.CurrentEnv()
 }
 
 // Version executes the helm version command and returns its output

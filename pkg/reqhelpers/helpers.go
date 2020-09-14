@@ -2,18 +2,21 @@ package reqhelpers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/naming"
+	"github.com/jenkins-x/jx-helpers/pkg/options"
+	"github.com/jenkins-x/jx-helpers/pkg/stringhelpers"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -42,7 +45,7 @@ func GetDevEnvironmentConfig(requirements *config.RequirementsConfig) *config.En
 }
 
 // GetBootJobCommand returns the boot job command
-func GetBootJobCommand(requirements *config.RequirementsConfig, gitURL, gitUser, gitToken, chartName, version, repo, tag, helmBin string, secretsYAML bool) util.Command {
+func GetBootJobCommand(requirements *config.RequirementsConfig, gitURL, gitUser, gitToken, chartName, version, repo, tag, helmBin string, secretsYAML bool) cmdrunner.Command {
 	args := []string{"install", "jx-boot"}
 
 	provider := requirements.Cluster.Provider
@@ -82,7 +85,7 @@ func GetBootJobCommand(requirements *config.RequirementsConfig, gitURL, gitUser,
 	}
 	args = append(args, chartName)
 
-	return util.Command{
+	return cmdrunner.Command{
 		Name: helmBin,
 		Args: args,
 	}
@@ -120,28 +123,6 @@ func GetRequirementsFromEnvironment(kubeClient kubernetes.Interface, jxClient ve
 	return devEnv, requirements, nil
 }
 
-// GetRequirementsFromGit clones the given git repository to get the requirements
-func GetRequirementsFromGit(gitURL string) (*config.RequirementsConfig, error) {
-	tempDir, err := ioutil.TempDir("", "jx-boot-")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temp dir")
-	}
-
-	log.Logger().Debugf("cloning %s to %s", gitURL, tempDir)
-
-	gitter := gits.NewGitCLI()
-	err = gitter.Clone(gitURL, tempDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to git clone %s to dir %s", gitURL, tempDir)
-	}
-
-	requirements, _, err := config.LoadRequirementsConfig(tempDir, false)
-	if err != nil {
-		return requirements, errors.Wrapf(err, "failed to requirements YAML file from %s", tempDir)
-	}
-	return requirements, nil
-}
-
 // OverrideRequirements allows CLI overrides
 func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirementsFile string,
 	outputRequirements *config.RequirementsConfig, flags *RequirementFlags, environment string) error {
@@ -151,7 +132,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	}
 
 	if customRequirementsFile != "" {
-		exists, err := util.FileExists(customRequirementsFile)
+		exists, err := files.FileExists(customRequirementsFile)
 		if err != nil {
 			return errors.Wrapf(err, "failed to check if file exists: %s", customRequirementsFile)
 		}
@@ -241,7 +222,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 		return errors.Wrapf(err, "failed to save %s", fileName)
 	}
 
-	log.Logger().Infof("saved file: %s", util.ColorInfo(fileName))
+	log.Logger().Infof("saved file: %s", termcolor.ColorInfo(fileName))
 	return nil
 }
 
@@ -318,9 +299,9 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	}
 
 	gitKind := r.Cluster.GitKind
-	gitKinds := append(gits.KindGits, "fake")
-	if gitKind != "" && util.StringArrayIndex(gitKinds, gitKind) < 0 {
-		return util.InvalidOption("git-kind", gitKind, gits.KindGits)
+	gitKinds := append(giturl.KindGits, "fake")
+	if gitKind != "" && stringhelpers.StringArrayIndex(gitKinds, gitKind) < 0 {
+		return options.InvalidOption("git-kind", gitKind, giturl.KindGits)
 	}
 
 	// default flags if associated values

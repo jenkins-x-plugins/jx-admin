@@ -9,19 +9,18 @@ import (
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/jx-admin/pkg/authhelpers"
 	"github.com/jenkins-x/jx-admin/pkg/common"
-	"github.com/jenkins-x/jx-admin/pkg/githelpers"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/files"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/input"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -118,7 +117,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		return err
 	}
 	if o.GitURLOutFile != "" {
-		err = ioutil.WriteFile(o.GitURLOutFile, []byte(repo.Link), util.DefaultFileWritePermissions)
+		err = ioutil.WriteFile(o.GitURLOutFile, []byte(repo.Link), files.DefaultFileWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save Git URL to file %s", o.GitURLOutFile)
 		}
@@ -164,12 +163,12 @@ func (o *EnvFactory) VerifyPreInstall(disableVerifyPackages bool, dir string) er
 
 // PrintBootJobInstructions prints the instructions to run the installer
 func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsConfig, link string) error {
-	gitInfo, err := gits.ParseGitURL(link)
+	gitInfo, err := giturl.ParseGitURL(link)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s", link)
 	}
 
-	info := util.ColorInfo
+	info := termcolor.ColorInfo
 	log.Logger().Info("\nto boot your cluster run the following commands:\n\n")
 
 	log.Logger().Infof("%s", info(fmt.Sprintf("git clone %s", link)))
@@ -209,12 +208,12 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 		return errors.Wrapf(err, "failed to detect if there were git changes in dir %s", dir)
 	}
 	if !changes {
-		log.Logger().Infof("no changes detected so not creating a Pull Request on %s", util.ColorInfo(gitURL))
+		log.Logger().Infof("no changes detected so not creating a Pull Request on %s", termcolor.ColorInfo(gitURL))
 		return nil
 	}
 
 	if branchName == "" {
-		branchName, err = githelpers.CreateBranch(gitter, dir)
+		branchName, err = gitclient.CreateBranch(gitter, dir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create git branch in %s", dir)
 		}
@@ -232,7 +231,7 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 		return errors.Wrapf(err, "failed to push to remote %s from dir %s", remote, dir)
 	}
 
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	gitInfo, err := giturl.ParseGitURL(gitURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL")
 	}
@@ -270,6 +269,6 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 
 	// the URL should not really end in .diff - fix in go-scm
 	link := strings.TrimSuffix(pr.Link, ".diff")
-	log.Logger().Infof("created Pull Request %s", util.ColorInfo(link))
+	log.Logger().Infof("created Pull Request %s", termcolor.ColorInfo(link))
 	return nil
 }

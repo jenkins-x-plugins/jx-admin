@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/input"
+	"github.com/jenkins-x/jx-helpers/pkg/options"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -27,13 +28,13 @@ type CreateRepository struct {
 func (r *CreateRepository) ConfirmValues(i input.Interface, batch bool) error {
 	if batch {
 		if r.GitServer == "" {
-			return util.MissingOption("git-server")
+			return options.MissingOption("git-server")
 		}
 		if r.Owner == "" {
-			return util.MissingOption("env-git-owner")
+			return options.MissingOption("env-git-owner")
 		}
 		if r.Repository == "" {
-			return util.MissingOption("repo")
+			return options.MissingOption("repo")
 		}
 		return nil
 	}
@@ -43,12 +44,12 @@ func (r *CreateRepository) ConfirmValues(i input.Interface, batch bool) error {
 		return err
 	}
 
-	saasGitKind := gits.SaasGitKind(r.GitServer)
+	saasGitKind := giturl.SaasGitKind(r.GitServer)
 	if saasGitKind != "" {
 		r.GitKind = saasGitKind
 	} else {
 		message := fmt.Sprintf("kind of the git server (%s):", r.GitServer)
-		r.GitKind, err = i.PickNameWithDefault(gits.KindGits, message, r.GitKind, "we need to know what kind of git provider this server is so we know what kind of REST API to use")
+		r.GitKind, err = i.PickNameWithDefault(giturl.KindGits, message, r.GitKind, "we need to know what kind of git provider this server is so we know what kind of REST API to use")
 		if err != nil {
 			return err
 		}
@@ -68,7 +69,7 @@ func (r *CreateRepository) ConfirmValues(i input.Interface, batch bool) error {
 
 // CreateRepository creates the git repository if it does not already exist
 func (r *CreateRepository) CreateRepository(scmClient *scm.Client) (*scm.Repository, error) {
-	info := util.ColorInfo
+	info := termcolor.ColorInfo
 	log.Logger().Infof("checking git repository %s/%s exists on server %s", info(r.Owner), info(r.Repository), info(r.GitServer))
 
 	ctx := context.Background()

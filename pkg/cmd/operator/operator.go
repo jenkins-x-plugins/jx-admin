@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx-admin/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-api/pkg/config"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/files"
@@ -21,10 +22,10 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
 	"github.com/jenkins-x/jx-helpers/pkg/kube"
+	"github.com/jenkins-x/jx-helpers/pkg/options"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
@@ -179,11 +180,11 @@ func (o *Options) Run() error {
 	commandLine = strings.ReplaceAll(commandLine, " --set", " \\\n    --set")
 
 	if o.DryRun {
-		log.Logger().Infof("\nTo install the git operator run this command:\n\n%s\n\n", util.ColorInfo(commandLine))
+		log.Logger().Infof("\nTo install the git operator run this command:\n\n%s\n\n", termcolor.ColorInfo(commandLine))
 		return nil
 	}
 
-	log.Logger().Infof("running command:\n\n%s\n\n", util.ColorInfo(commandLine))
+	log.Logger().Infof("running command:\n\n%s\n\n", termcolor.ColorInfo(commandLine))
 
 	_, err = c.RunWithoutRetry()
 	if err != nil {
@@ -205,7 +206,7 @@ func (o *Options) Run() error {
 	return nil
 }
 
-func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
+func (o *Options) getCommandLine(helmBin, gitURL string) cmdrunner.Command {
 	username := o.GitUserName
 	password := o.GitToken
 
@@ -228,7 +229,7 @@ func (o *Options) getCommandLine(helmBin, gitURL string) util.Command {
 	}
 	args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
 
-	return util.Command{
+	return cmdrunner.Command{
 		Name: helmBin,
 		Args: args,
 	}
@@ -258,7 +259,7 @@ func (o *Options) findChartVersion(_ *config.RequirementsConfig) (string, error)
 }
 
 func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	gitInfo, err := giturl.ParseGitURL(gitURL)
 	if err != nil {
 		return gitURL, errors.Wrapf(err, "failed to parse git URL")
 	}
@@ -288,7 +289,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 		answer = u.String()
 	}
 
-	log.Logger().Infof("git clone URL is %s", util.ColorInfo(answer))
+	log.Logger().Infof("git clone URL is %s", termcolor.ColorInfo(answer))
 	log.Logger().Infof("now verifying we have a valid git username and token so that we can clone the git repository inside kubernetes...")
 
 	if o.GitUserName == "" {
@@ -299,7 +300,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 				return answer, errors.Wrap(err, "failed to get git username")
 			}
 		} else {
-			return answer, util.MissingOption("username")
+			return answer, options.MissingOption("username")
 		}
 
 	}
@@ -317,10 +318,10 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 				return answer, errors.Wrap(err, "failed to get git password")
 			}
 		} else {
-			return answer, util.MissingOption("token")
+			return answer, options.MissingOption("token")
 		}
 	}
-	log.Logger().Infof("git username is %s for URL %s and we have a valid password", util.ColorInfo(o.GitUserName), util.ColorInfo(answer))
+	log.Logger().Infof("git username is %s for URL %s and we have a valid password", termcolor.ColorInfo(o.GitUserName), termcolor.ColorInfo(answer))
 	return answer, nil
 }
 
@@ -347,7 +348,7 @@ func (o *Options) switchNamespace(ns string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to update the kube config to namepace %s", ns)
 	}
-	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", util.ColorInfo(ns))
+	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", termcolor.ColorInfo(ns))
 	return nil
 }
 

@@ -4,8 +4,8 @@ import (
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/versionstream"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/pkg/versionstream"
 )
 
 // HelmfileUpgrader moves an existing cluster to the new helmfile / helm 3 GitOps source
@@ -83,7 +83,7 @@ func (u *HelmfileUpgrader) GetOrCreateEnvironment(e *v1.Environment, requirement
 	gitURL := e.Spec.Source.URL
 
 	if gitURL != "" {
-		gitInfo, err := gits.ParseGitURL(gitURL)
+		gitInfo, err := giturl.ParseGitURL(gitURL)
 		if err != nil {
 			return nil
 		}

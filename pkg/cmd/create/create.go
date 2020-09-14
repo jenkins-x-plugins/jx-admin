@@ -8,16 +8,16 @@ import (
 	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/envfactory"
-	"github.com/jenkins-x/jx-admin/pkg/githelpers"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-api/pkg/config"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/pkg/files"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
@@ -105,7 +105,7 @@ func (o *Options) Run() error {
 
 	if o.DevGitURL != "" {
 		if o.Environment == "dev" {
-			log.Logger().Warnf("you are creating a %s environment but are also trying to create a Pull Request on a development environment git repository %s - did you mean to do that?", util.ColorInfo(o.Environment), util.ColorInfo(o.DevGitURL))
+			log.Logger().Warnf("you are creating a %s environment but are also trying to create a Pull Request on a development environment git repository %s - did you mean to do that?", termcolor.ColorInfo(o.Environment), termcolor.ColorInfo(o.DevGitURL))
 		}
 		if o.DevGitKind == "" {
 			o.DevGitKind = giturl.SaasGitKind(o.DevGitURL)
@@ -130,9 +130,9 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to verify requirements in dir %s", dir)
 	}
 
-	log.Logger().Infof("created git source at %s", util.ColorInfo(dir))
+	log.Logger().Infof("created git source at %s", termcolor.ColorInfo(dir))
 
-	_, err = githelpers.AddAndCommitFiles(o.Gitter, dir, "fix: initial code")
+	_, err = gitclient.AddAndCommitFiles(o.Gitter, dir, "fix: initial code")
 	if err != nil {
 		return errors.Wrap(err, "failed to add files to git")
 	}
@@ -180,7 +180,7 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 	var err error
 	dir := o.Dir
 	if dir != "" {
-		err = os.MkdirAll(dir, util.DefaultWritePermissions)
+		err = os.MkdirAll(dir, files.DefaultDirWritePermissions)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to create directory %s", dir)
 		}
@@ -191,9 +191,9 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 		}
 	}
 
-	log.Logger().Debugf("cloning %s to directory %s", util.ColorInfo(gitURL), util.ColorInfo(dir))
+	log.Logger().Debugf("cloning %s to directory %s", termcolor.ColorInfo(gitURL), termcolor.ColorInfo(dir))
 
-	return githelpers.GitCloneToTempDir(gitter, gitURL, dir)
+	return gitclient.CloneToDir(gitter, gitURL, dir)
 }
 
 func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
@@ -201,7 +201,7 @@ func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
 	if cr == nil {
 		return errors.Errorf("no CreatedRepository available")
 	}
-	dir, err := githelpers.GitCloneToTempDir(o.Gitter, gitURL, "")
+	dir, err := gitclient.CloneToDir(o.Gitter, gitURL, "")
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
 	}
@@ -268,6 +268,6 @@ func (o *Options) installGitOperator(dir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to install the git operator")
 	}
-	log.Logger().Infof("installed the git operator into namespace %s", util.ColorInfo(op.Namespace))
+	log.Logger().Infof("installed the git operator into namespace %s", termcolor.ColorInfo(op.Namespace))
 	return nil
 }

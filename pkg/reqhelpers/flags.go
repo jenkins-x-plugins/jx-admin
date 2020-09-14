@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx/v2/pkg/cloud"
-	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +37,7 @@ func AddRequirementsOptions(cmd *cobra.Command, r *config.RequirementsConfig) {
 	// cluster
 	cmd.Flags().StringVarP(&r.Cluster.ClusterName, "cluster", "c", "", "configures the cluster name")
 	cmd.Flags().StringVarP(&r.Cluster.Namespace, "namespace", "n", "", "configures the namespace to use")
-	cmd.Flags().StringVarP(&r.Cluster.Provider, "provider", "p", "", "configures the kubernetes provider.  Supported providers: "+cloud.KubernetesProviderOptions())
+	cmd.Flags().StringVarP(&r.Cluster.Provider, "provider", "p", "", "configures the kubernetes provider.  Supported providers: "+KubernetesProviderOptions())
 	cmd.Flags().StringVarP(&r.Cluster.ProjectID, "project", "", "", "configures the Google Project ID")
 	cmd.Flags().StringVarP(&r.Cluster.Registry, "registry", "", "", "configures the host name of the container registry")
 	cmd.Flags().StringVarP(&r.Cluster.Region, "region", "", "", "configures the cloud region")
@@ -79,7 +78,7 @@ func AddRequirementsOptions(cmd *cobra.Command, r *config.RequirementsConfig) {
 
 // AddGitRequirementsOptions adds git specific overrides to the given requirements
 func AddGitRequirementsOptions(cmd *cobra.Command, r *config.RequirementsConfig) {
-	cmd.Flags().StringVarP(&r.Cluster.GitKind, "git-kind", "", "", fmt.Sprintf("the kind of git repository to use. Possible values: %s", strings.Join(gits.KindGits, ", ")))
+	cmd.Flags().StringVarP(&r.Cluster.GitKind, "git-kind", "", "", fmt.Sprintf("the kind of git repository to use. Possible values: %s", strings.Join(giturl.KindGits, ", ")))
 	cmd.Flags().StringVarP(&r.Cluster.GitName, "git-name", "", "", "the name of the git repository")
 	cmd.Flags().StringVarP(&r.Cluster.GitServer, "git-server", "", "", "the git server host such as https://github.com or https://gitlab.com")
 	cmd.Flags().StringVarP(&r.Cluster.EnvironmentGitOwner, "env-git-owner", "", "", "the git owner (organisation or user) used to own the git repositories for the environments")

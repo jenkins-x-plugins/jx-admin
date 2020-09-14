@@ -8,11 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
-
 	"github.com/cli/cli/api"
 	"github.com/cli/cli/auth"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -88,8 +87,8 @@ func setupConfigFile(filename string) (*ConfigEntry, error) {
 	}
 
 	if err == nil {
-		log.Logger().Infof(util.ColorInfo("Please now grant access to any Organisations you require ") + ", this is needed to create git repositories used to manage environments (GitOps)")
-		fmt.Fprintln(os.Stderr, util.ColorInfo(fmt.Sprintf("https://github.com/settings/connections/applications/%s", oauthClientID)))
+		log.Logger().Infof(termcolor.ColorInfo("Please now grant access to any Organisations you require ") + ", this is needed to create git repositories used to manage environments (GitOps)")
+		fmt.Fprintln(os.Stderr, termcolor.ColorInfo(fmt.Sprintf("https://github.com/settings/connections/applications/%s", oauthClientID)))
 		fmt.Fprintln(os.Stderr, "Press Enter to continue... ")
 		err = waitForEnter(os.Stdin)
 		if err != nil {

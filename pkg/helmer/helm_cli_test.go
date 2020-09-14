@@ -7,13 +7,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	helm "github.com/jenkins-x/jx-admin/pkg/helmer"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner/fakerunner"
 	"github.com/stretchr/testify/assert"
-
-	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
-	. "github.com/petergtz/pegomock"
 )
 
 const binary = "helm"
@@ -49,25 +49,29 @@ const listReleasesOutputHelm3 = `
 NAME 	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART
 jxing	jx       	2       	2019-05-17 15:30:07.629472 +0100 BST	deployed	nginx-ingress-1.3.1`
 
-func createHelm(t *testing.T, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
+func createHelm(t *testing.T, expectedError error, expectedOutput string) (*helm.HelmCLI, *fakerunner.FakeRunner) {
 	return createHelmWithCwdAndHelmVersion(t, cwd, expectedError, expectedOutput)
 }
 
-func createHelmWithVersion(t *testing.T, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
+func createHelmWithVersion(t *testing.T, expectedError error, expectedOutput string) (*helm.HelmCLI, *fakerunner.FakeRunner) {
 	return createHelmWithCwdAndHelmVersion(t, cwd, expectedError, expectedOutput)
 }
 
-func createHelmWithCwdAndHelmVersion(t *testing.T, dir string, expectedError error, expectedOutput string) (*helm.HelmCLI, *mocks.MockCommander) {
-	RegisterMockTestingT(t)
-	runner := mocks.NewMockCommander()
-	When(runner.RunWithoutRetry()).ThenReturn(expectedOutput, expectedError)
+func createHelmWithCwdAndHelmVersion(t *testing.T, dir string, expectedError error, expectedOutput string) (*helm.HelmCLI, *fakerunner.FakeRunner) {
+	runner := &fakerunner.FakeRunner{
+		CommandRunner: func(c *cmdrunner.Command) (string, error) {
+			return expectedOutput, expectedError
+		},
+	}
 	helmBinary := binary
-	cli := helm.NewHelmCLIWithRunner(runner, helmBinary, dir, true)
+	cli := helm.NewHelmCLIWithRunner(runner.Run, helmBinary, dir, true)
 	return cli, runner
 }
 
-func verifyArgs(t *testing.T, cli *helm.HelmCLI, runner *mocks.MockCommander, expectedArgs ...string) {
-	runner.VerifyWasCalledOnce().SetArgs(expectedArgs)
+func verifyArgs(t *testing.T, cli *helm.HelmCLI, runner *fakerunner.FakeRunner, expectedArgs ...string) {
+	runner.ExpectResults(t, fakerunner.FakeResult{
+		CLI: "helm " + strings.Join(expectedArgs, " "),
+	})
 }
 
 func TestNewHelmCLI(t *testing.T) {
@@ -75,20 +79,9 @@ func TestNewHelmCLI(t *testing.T) {
 	assert.Equal(t, binary, cli.Binary)
 	assert.Equal(t, cwd, cli.CWD)
 	assert.Equal(t, false, cli.Debug)
-	assert.NotNil(t, cli.Runner)
-	assert.Equal(t, binary, cli.Runner.CurrentName())
-	assert.Equal(t, cwd, cli.Runner.CurrentDir())
-}
-
-func TestInit(t *testing.T) {
-	expectedArgs := []string{"init", "--client-only", "--service-account", serviceAccount,
-		"--tiller-namespace", namespace, "--upgrade", "--wait", "--force-upgrade"}
-	helm, runner := createHelm(t, nil, "")
-
-	err := helm.Init(true, serviceAccount, namespace, true)
-
-	assert.NoError(t, err, "should init helm without any error")
-	verifyArgs(t, helm, runner, expectedArgs...)
+	assert.NotNil(t, cli.Command)
+	assert.Equal(t, binary, cli.Command.CurrentName())
+	assert.Equal(t, cwd, cli.Command.CurrentDir())
 }
 
 func TestAddRepo(t *testing.T) {

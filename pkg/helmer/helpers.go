@@ -5,8 +5,8 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +43,7 @@ func AddHelmRepoIfMissing(helmer Helmer, helmURL, repoName, username, password s
 				break
 			}
 		}
-		log.Logger().Infof("Adding missing Helm repo: %s %s", util.ColorInfo(repoName), util.ColorInfo(helmURL))
+		log.Logger().Infof("Adding missing Helm repo: %s %s", termcolor.ColorInfo(repoName), termcolor.ColorInfo(helmURL))
 		err = helmer.AddRepo(repoName, helmURL, username, password)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmURL)
