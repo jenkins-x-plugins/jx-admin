@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/jenkins-x/go-scm v1.5.164
 	github.com/jenkins-x/jx-api v0.0.17
-	github.com/jenkins-x/jx-helpers v1.0.57
+	github.com/jenkins-x/jx-helpers v1.0.59
 	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.11
 	github.com/jenkins-x/jx/v2 v2.1.143
@@ -22,7 +22,7 @@ require (
 	k8s.io/api v0.18.1
 	k8s.io/apimachinery v0.18.1
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
-	k8s.io/kubernetes v1.14.0
+	k8s.io/kubernetes v1.14.7
 	sigs.k8s.io/yaml v1.2.0
 )
 

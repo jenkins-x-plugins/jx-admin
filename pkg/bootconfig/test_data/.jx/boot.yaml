@@ -1,5 +1,0 @@
-apiVersion: boot.jenkins-x.io/v1alpha1
-kind: Boot
-spec:
-  pipelineBotUser: jenkins-x-labs-bot
-  secretManager: external-secrets

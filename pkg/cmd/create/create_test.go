@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
-	"github.com/jenkins-x/jx-admin/pkg/fakes/fakeauth"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-api/pkg/config"
@@ -116,7 +115,8 @@ func TestCreate(t *testing.T) {
 			co.RepoName = repoName
 		}
 		co.JXClient = v1fake.NewSimpleClientset()
-		co.EnvFactory.AuthConfigService = fakeauth.NewFakeAuthConfigService(t, "jstrachan", "dummytoken", "https://fake.com", "https://github.com")
+		co.EnvFactory.ScmClientFactory.GitUsername = "jstrachan"
+		co.EnvFactory.ScmClientFactory.GitToken = "dummytoken"
 
 		err = co.Run()
 		require.NoError(t, err, "failed to create repository for test %s", tc.Name)

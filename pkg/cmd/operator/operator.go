@@ -9,7 +9,6 @@ import (
 
 	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x/jx-admin/pkg/common"
-	"github.com/jenkins-x/jx-admin/pkg/helmer"
 	"github.com/jenkins-x/jx-admin/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-api/pkg/config"
@@ -20,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/gitconfig"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/pkg/helmer"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
 	"github.com/jenkins-x/jx-helpers/pkg/kube"
 	"github.com/jenkins-x/jx-helpers/pkg/options"

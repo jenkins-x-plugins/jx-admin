@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/jenkins-x/jx-admin/pkg/authhelpers"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
@@ -18,9 +17,9 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/pkg/input"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/pkg/scmhelpers"
 	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -31,7 +30,7 @@ type EnvFactory struct {
 	JXClient             versioned.Interface
 	Gitter               gitclient.Interface
 	CommandRunner        cmdrunner.CommandRunner
-	AuthConfigService    auth.ConfigService
+	ScmClientFactory     scmhelpers.Factory
 	Input                input.Interface
 	RepoName             string
 	GitURLOutFile        string
@@ -39,19 +38,16 @@ type EnvFactory struct {
 	IOFileHandles        *files.IOFileHandles
 	ScmClient            *scm.Client
 	BatchMode            bool
-	UseGitHubOAuth       bool
-	CreatedRepository    *CreateRepository
+	CreatedRepository    *scmhelpers.CreateRepository
 	CreatedScmRepository *scm.Repository
-	UserAuth             *auth.UserAuth
 }
 
 // AddFlags adds common CLI flags
 func (o *EnvFactory) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.BatchMode, "batch-mode", "b", false, "Enables batch mode which avoids prompting for user input")
-	cmd.Flags().BoolVarP(&o.UseGitHubOAuth, "oauth", "", false, "Enables the use of OAuth login to github.com to get a github access token")
 	cmd.Flags().StringVarP(&o.RepoName, "repo", "", "", "the name of the development git repository to create")
 	cmd.Flags().StringVarP(&o.GitURLOutFile, "out", "", "", "the name of the file to save with the created git URL inside")
-
+	cmd.Flags().StringVarP(&o.ScmClientFactory.GitToken, "git-token", "", "", "the git token used to operate on the git repository")
 }
 
 // CreateDevEnvGitRepository creates the dev environment git repository from the given directory
@@ -67,7 +63,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		return fmt.Errorf("the file %s does not contain a development environment", fileName)
 	}
 
-	cr := &CreateRepository{
+	cr := &scmhelpers.CreateRepository{
 		GitServer:  requirements.Cluster.GitServer,
 		GitKind:    requirements.Cluster.GitKind,
 		Owner:      dev.Owner,
@@ -86,29 +82,18 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 		return err
 	}
 
-	scmClient, token, err := o.CreateScmClient(cr.GitServer, cr.Owner, cr.GitKind)
+	scmClient, _, err := o.CreateScmClient(cr.GitServer, cr.Owner, cr.GitKind)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create SCM client for server %s", cr.GitServer)
 	}
 	o.ScmClient = scmClient
 
-	user, _, err := scmClient.Users.Find(context.Background())
-	if err != nil {
-		return errors.Wrap(err, "failed to find the current SCM user")
-	}
-	cr.CurrentUsername = user.Login
-
-	userAuth := &auth.UserAuth{
-		Username: user.Login,
-		ApiToken: token,
-	}
-	o.UserAuth = userAuth
 	repo, err := cr.CreateRepository(scmClient)
 	if err != nil {
 		return err
 	}
 	o.CreatedScmRepository = repo
-	err = o.PushToGit(repo.Clone, userAuth, dir)
+	err = o.PushToGit(repo.Clone, dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to push to the git repository")
 	}
@@ -135,15 +120,14 @@ func (o *EnvFactory) GetInput() input.Interface {
 
 // CreateScmClient creates a new scm client
 func (o *EnvFactory) CreateScmClient(gitServer, owner, gitKind string) (*scm.Client, string, error) {
-	af, err := authhelpers.NewAuthFacadeWithArgs(o.AuthConfigService, o.Gitter, o.IOFileHandles, o.BatchMode, o.UseGitHubOAuth)
+	o.ScmClientFactory.GitServerURL = gitServer
+	o.ScmClientFactory.Owner = owner
+	o.ScmClientFactory.GitKind = gitKind
+	scmClient, err := o.ScmClientFactory.Create()
 	if err != nil {
-		return nil, "", errors.Wrapf(err, "failed to create git auth facade")
+		return scmClient, "", errors.Wrapf(err, "failed to create SCM client for server %s", gitServer)
 	}
-	scmClient, token, _, err := af.ScmClient(gitServer, owner, gitKind)
-	if err != nil {
-		return scmClient, token, errors.Wrapf(err, "failed to create SCM client for server %s", gitServer)
-	}
-	return scmClient, token, nil
+	return scmClient, o.ScmClientFactory.GitToken, nil
 }
 
 // VerifyPreInstall verify the pre install of boot
@@ -179,8 +163,8 @@ func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsC
 }
 
 // PushToGit pushes to the git repository
-func (o *EnvFactory) PushToGit(cloneURL string, userAuth *auth.UserAuth, dir string) error {
-	forkPushURL, err := authhelpers.CreateAuthenticatedURL(cloneURL, userAuth)
+func (o *EnvFactory) PushToGit(cloneURL string, dir string) error {
+	forkPushURL, err := o.ScmClientFactory.CreateAuthenticatedURL(cloneURL)
 	if err != nil {
 		return errors.Wrapf(err, "creating push URL for %s", cloneURL)
 	}

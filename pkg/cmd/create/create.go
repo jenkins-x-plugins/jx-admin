@@ -250,10 +250,6 @@ func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
 }
 
 func (o *Options) installGitOperator(dir string) error {
-	userAuth := o.EnvFactory.UserAuth
-	if userAuth == nil {
-		return errors.Errorf("no UserAuth was created for the environment git repository")
-	}
 	op := o.Operator
 	op.Dir = dir
 	op.BatchMode = o.BatchMode
@@ -262,8 +258,8 @@ func (o *Options) installGitOperator(dir string) error {
 		gitURL = o.EnvFactory.CreatedScmRepository.Link
 	}
 	op.GitURL = gitURL
-	op.GitUserName = userAuth.Username
-	op.GitToken = userAuth.ApiToken
+	op.GitUserName = o.ScmClientFactory.GitUsername
+	op.GitToken = o.ScmClientFactory.GitToken
 	err := op.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to install the git operator")

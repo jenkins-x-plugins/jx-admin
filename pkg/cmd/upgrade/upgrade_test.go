@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx-admin/pkg/cmd/upgrade"
-	"github.com/jenkins-x/jx-admin/pkg/fakes/fakeauth"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-api/pkg/config"
@@ -97,7 +96,8 @@ func TestUpgrade(t *testing.T) {
 		} else {
 			uo.UsePullRequest = true
 		}
-		uo.EnvFactory.AuthConfigService = fakeauth.NewFakeAuthConfigService(t, "jstrachan", "dummytoken", gitServerURL)
+		uo.EnvFactory.ScmClientFactory.GitUsername = "jstrachan"
+		uo.EnvFactory.ScmClientFactory.GitToken = "dummytoken"
 
 		err = uo.Run()
 		require.NoError(t, err, "failed to upgrade repository")

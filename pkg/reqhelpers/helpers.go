@@ -6,12 +6,9 @@ import (
 
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/files"
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/naming"
 	"github.com/jenkins-x/jx-helpers/pkg/options"
 	"github.com/jenkins-x/jx-helpers/pkg/stringhelpers"
@@ -19,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 )
 
 // RequirementFlags for the boolean flags we only update if specified on the CLI
@@ -42,85 +38,6 @@ func GetDevEnvironmentConfig(requirements *config.RequirementsConfig) *config.En
 		}
 	}
 	return nil
-}
-
-// GetBootJobCommand returns the boot job command
-func GetBootJobCommand(requirements *config.RequirementsConfig, gitURL, gitUser, gitToken, chartName, version, repo, tag, helmBin string, secretsYAML bool) cmdrunner.Command {
-	args := []string{"install", "jx-boot"}
-
-	provider := requirements.Cluster.Provider
-	if provider != "" {
-		args = append(args, "--set", fmt.Sprintf("jxRequirements.cluster.provider=%s", provider))
-	}
-
-	project := requirements.Cluster.ProjectID
-	if project != "" {
-		args = append(args, "--set", fmt.Sprintf("jxRequirements.cluster.project=%s", project))
-	}
-
-	clusterName := requirements.Cluster.ClusterName
-	if clusterName != "" {
-		args = append(args, "--set", fmt.Sprintf("jxRequirements.cluster.clusterName=%s", clusterName))
-	}
-
-	if gitURL != "" {
-		args = append(args, "--set", fmt.Sprintf("jxRequirements.bootConfigURL=%s", gitURL))
-	}
-	if repo != "" {
-		args = append(args, "--set", fmt.Sprintf("image.repository=%s", repo))
-	}
-	if tag != "" {
-		args = append(args, "--set", fmt.Sprintf("image.tag=%s", tag))
-	}
-	if gitUser != "" {
-		args = append(args, "--set", fmt.Sprintf("git.username=%s", gitUser))
-	}
-	if gitToken != "" {
-		args = append(args, "--set", fmt.Sprintf("git.token=%s", gitToken))
-	}
-	args = append(args, "--set", fmt.Sprintf("secrets.yaml=%v", secretsYAML))
-
-	if version != "" {
-		args = append(args, "--version", version)
-	}
-	args = append(args, chartName)
-
-	return cmdrunner.Command{
-		Name: helmBin,
-		Args: args,
-	}
-}
-
-// GetRequirementsFromEnvironment tries to find the development environment then the requirements from it
-func GetRequirementsFromEnvironment(kubeClient kubernetes.Interface, jxClient versioned.Interface, namespace string) (*v1.Environment, *config.RequirementsConfig, error) {
-	ns, _, err := jxenv.GetDevNamespace(kubeClient, namespace)
-	if err != nil {
-		log.Logger().Warnf("could not find the dev namespace from namespace %s due to %s", namespace, err.Error())
-		ns = namespace
-	}
-	devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
-	if err != nil {
-		log.Logger().Warnf("could not find dev Environment in namespace %s", ns)
-	}
-	if devEnv != nil {
-		requirements, err := config.GetRequirementsConfigFromTeamSettings(&devEnv.Spec.TeamSettings)
-		if err != nil {
-			return devEnv, nil, errors.Wrapf(err, "failed to load requirements from dev environment %s in namespace %s", devEnv.Name, ns)
-		}
-		if requirements != nil {
-			return devEnv, requirements, nil
-		}
-	}
-
-	// no dev environment found so lets return an empty environment
-	if devEnv == nil {
-		devEnv = jxenv.CreateDefaultDevEnvironment(ns)
-	}
-	if devEnv != nil && devEnv.Namespace == "" {
-		devEnv.Namespace = ns
-	}
-	requirements := config.NewRequirementsConfig()
-	return devEnv, requirements, nil
 }
 
 // OverrideRequirements allows CLI overrides
@@ -340,88 +257,6 @@ func defaultStorage(storage *config.StorageEntryConfig) {
 		storage.Enabled = true
 	}
 }
-
-/* TODO
-// FindRequirementsAndGitURL tries to find the requirements and git URL via either environment or directory
-func FindRequirementsAndGitURL(jxFactory jxfactory.Factory, gitURLOption string, gitter gitclient.Interface, dir string) (*config.RequirementsConfig, string, error) {
-	var requirements *config.RequirementsConfig
-	gitURL := gitURLOption
-
-	var err error
-	if gitURLOption != "" {
-		if requirements == nil {
-			requirements, err = GetRequirementsFromGit(gitURL)
-			if err != nil {
-				return requirements, gitURL, errors.Wrapf(err, "failed to get requirements from git URL %s", gitURL)
-			}
-		}
-	}
-	if gitURL == "" || requirements == nil {
-		jxClient, ns, err := jxFactory.CreateJXClient()
-		if err != nil {
-			return requirements, gitURL, err
-		}
-		devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return requirements, gitURL, err
-		}
-		if devEnv != nil {
-			if gitURL == "" {
-				gitURL = devEnv.Spec.Source.URL
-			}
-			requirements, err = config.GetRequirementsConfigFromTeamSettings(&devEnv.Spec.TeamSettings)
-			if err != nil {
-				log.Logger().Debugf("failed to load requirements from team settings %s", err.Error())
-			}
-		}
-	}
-	if requirements == nil {
-		requirements, _, err = config.LoadRequirementsConfig(dir, false)
-		if err != nil {
-			return requirements, gitURL, err
-		}
-	}
-
-	if gitURL == "" {
-		// lets try find the git URL from
-		gitURL, err = findGitURLFromDir(dir)
-		if err != nil {
-			return requirements, gitURL, errors.Wrapf(err, "your cluster has not been booted before and you are not inside a git clone of your dev environment repository so you need to pass in the URL of the git repository as --git-url")
-		}
-	}
-	return requirements, gitURL, nil
-}
-
-
-// FindGitURL tries to find the git URL via either environment or directory
-func FindGitURL(jxClient versioned.Interface) (string, error) {
-	gitURL := ""
-	jxClient, ns, err := jxFactory.CreateJXClient()
-	if err != nil {
-		return gitURL, err
-	}
-	devEnv, err := jxenv.GetDevEnvironment(jxClient, ns)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return gitURL, err
-	}
-	if devEnv != nil {
-		return devEnv.Spec.Source.URL, nil
-	}
-	return gitURL, nil
-}
-
-func findGitURLFromDir(dir string) (string, error) {
-	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
-	if err != nil {
-		return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
-	}
-
-	if gitConfDir == "" {
-		return "", fmt.Errorf("no .git directory could be found from dir %s", dir)
-	}
-	return gitconfig.DiscoverUpstreamGitURL(gitConfDir)
-}
-*/
 
 // GitKind returns the git kind for the development environment or empty string if it can't be found
 func GitKind(devSource v1.EnvironmentRepository, r *config.RequirementsConfig) string {
