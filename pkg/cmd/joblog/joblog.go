@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
@@ -86,7 +85,7 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 			helper.CheckErr(err)
 		},
 	}
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace where the boot jobs run")
+	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
 	command.Flags().StringVarP(&options.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
 	command.Flags().StringVarP(&options.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
 	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
@@ -109,12 +108,15 @@ func (o *Options) Run() error {
 	if err != nil {
 		return err
 	}
-	ns := o.Namespace
 	client := o.KubeClient
 	selector := o.JobSelector
 	containerName := o.ContainerName
 
 	o.timeEnd = time.Now().Add(o.Duration)
+	ns, err := o.findGitOperatorNamespace(o.Namespace)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find the git operator namespace")
+	}
 
 	logger.Logger().Infof("waiting for the Git Operator to be ready in namespace %s...", info(ns))
 
@@ -335,6 +337,24 @@ func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name strin
 	}
 	logger.Logger().Debugf("boot Job %s is not completed yet", info(job.Name))
 	return false, job, nil
+}
+
+func (o *Options) findGitOperatorNamespace(namespace string) (string, error) {
+	namespaces := []string{"jx", "jx-git-operator"}
+	if stringhelpers.StringArrayIndex(namespaces, namespace) < 0 {
+		namespaces = append(namespaces, namespace)
+	}
+	name := "jx-git-operator"
+	for _, ns := range namespaces {
+		_, err := o.KubeClient.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
+		if err == nil {
+			return ns, nil
+		}
+		if !apierrors.IsNotFound(err) {
+			return ns, errors.Wrapf(err, "failed to find Deployment %s in namespace %s", name, ns)
+		}
+	}
+	return namespace, errors.Errorf("failed to find Deployment %s in namespaces %s", name, strings.Join(namespaces, ", "))
 }
 
 func verifyContainerName(pod *corev1.Pod, name string) error {
