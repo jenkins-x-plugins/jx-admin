@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
+	"github.com/jenkins-x/jx-admin/pkg/cmd/invitations"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-admin/pkg/cmd/plugins"
@@ -26,6 +27,7 @@ func Main() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(cobras.SplitCommand(create.NewCmdCreate()))
+	cmd.AddCommand(cobras.SplitCommand(invitations.NewCmdInvitations()))
 	cmd.AddCommand(cobras.SplitCommand(joblog.NewCmdJobLog()))
 	cmd.AddCommand(cobras.SplitCommand(operator.NewCmdOperator()))
 	cmd.AddCommand(cobras.SplitCommand(upgrade.NewCmdUpgrade()))
