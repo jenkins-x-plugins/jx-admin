@@ -86,12 +86,12 @@ func TestUpgrade(t *testing.T) {
 
 		createRepo := name == "jx-install"
 		fullName := "jstrachan/environment-mycluster-dev"
-		gitServerURL := "https://github.com"
+
 		if createRepo {
 			fullName = "myorg/dummy"
 			uo.RepoName = "dummy"
 			uo.OverrideRequirements.Cluster.GitKind = "fake"
-			gitServerURL = "https://fake.com"
+			gitServerURL := "https://fake.com"
 			uo.OverrideRequirements.Cluster.GitServer = gitServerURL
 		} else {
 			uo.UsePullRequest = true

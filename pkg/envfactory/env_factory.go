@@ -163,7 +163,7 @@ func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsC
 }
 
 // PushToGit pushes to the git repository
-func (o *EnvFactory) PushToGit(cloneURL string, dir string) error {
+func (o *EnvFactory) PushToGit(cloneURL, dir string) error {
 	forkPushURL, err := o.ScmClientFactory.CreateAuthenticatedURL(cloneURL)
 	if err != nil {
 		return errors.Wrapf(err, "creating push URL for %s", cloneURL)
