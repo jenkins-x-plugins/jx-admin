@@ -16,12 +16,12 @@ const (
 	KUBERNETES = "kubernetes"
 	OPENSHIFT  = "openshift"
 	ICP        = "icp"
-	JX_INFRA   = "jx-infra"
+	JXINFRA    = "jx-infra"
 	ALIBABA    = "alibaba"
 )
 
 // KubernetesProviders list of all available Kubernetes providers
-var KubernetesProviders = []string{GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, JX_INFRA, PKS, ICP, ALIBABA}
+var KubernetesProviders = []string{GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, JXINFRA, PKS, ICP, ALIBABA}
 
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {

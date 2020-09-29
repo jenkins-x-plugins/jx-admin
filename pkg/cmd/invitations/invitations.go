@@ -186,7 +186,6 @@ func (o *Options) acceptRepoInvites(invites []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get repositories to accept")
 	}
-	log.Logger().Infof("gonna accept repos %v", reposToAccept)
 	for _, r := range reposToAccept {
 		id, err := strconv.ParseInt(o.OriginalRepos[r], 10, 64)
 		if err != nil {
@@ -197,6 +196,7 @@ func (o *Options) acceptRepoInvites(invites []string) error {
 			return errors.Wrapf(err, "failed to accept invite for repository %s", r)
 		}
 	}
+	log.Logger().Infof("accepted invites to repositories %v", reposToAccept)
 	return nil
 }
 
@@ -215,7 +215,7 @@ func (o *Options) acceptOrgInvites(invites []string) error {
 			return errors.Wrapf(err, "failed to accept invite for organisation %s", org)
 		}
 	}
-
+	log.Logger().Infof("accept invites to organisations %v", orgs)
 	return nil
 }
 
@@ -224,25 +224,22 @@ func (o *Options) getInviteDetailsToAccept(invites []string, kind inviteType) ([
 	var result []string
 	for _, invite := range invites {
 		// extract the repo or org name from the list of names we used in the survey to ask which repo invites should be accepted
-		s1 := strings.SplitAfterN(invite, ":", 2)
-		s2 := strings.TrimSpace(s1[1])
+		s := strings.SplitAfterN(invite, ":", 2)
+		part2 := strings.TrimSpace(s[1])
 		switch kind {
 		case repository:
-			gitInfo, err := giturl.ParseGitURL(s2)
+			gitInfo, err := giturl.ParseGitURL(part2)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse git url %s", s2)
+				return nil, errors.Wrapf(err, "failed to parse git url %s", part2)
 			}
 			result = append(result, fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name))
 		case organisation:
-			gitInfo, err := giturl.ParseGitOrganizationURL(s2)
+			gitInfo, err := giturl.ParseGitOrganizationURL(part2)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse git url %s", s2)
-			}
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse git url %s", s2)
+				return nil, errors.Wrapf(err, "failed to parse git url %s", part2)
 			}
 			if gitInfo.Organisation == "" {
-				return nil, fmt.Errorf("failed to get git organisation from %s", s2)
+				return nil, fmt.Errorf("failed to get git organisation from %s", part2)
 			}
 			result = append(result, gitInfo.Organisation)
 		}
