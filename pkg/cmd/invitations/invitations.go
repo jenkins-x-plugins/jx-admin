@@ -3,7 +3,6 @@ package invitations
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
@@ -48,7 +47,7 @@ type Options struct {
 	Args   []string
 	Input  input.Interface
 
-	OriginalRepos map[string]string
+	OriginalRepos map[string]int64
 }
 
 // NewCmdInvitations list and accept bot user invitations
@@ -118,9 +117,12 @@ func (o *Options) Run() error {
 
 	// lets display the list of repository and organisation invites and ask user to select ones to accept
 	var repoNamesToCheck []string
-	for i, repo := range repoInvites {
-		o.OriginalRepos[repo.Repo.Name] = repo.Repo.ID
-		repoNamesToCheck = append(repoNamesToCheck, fmt.Sprintf("%d. Repository invite: %s/%s", i, gitServerURL, repo.Repo.Name))
+	if o.OriginalRepos == nil {
+		o.OriginalRepos = make(map[string]int64)
+	}
+	for _, repo := range repoInvites {
+		o.OriginalRepos[repo.Repo.FullName] = repo.ID
+		repoNamesToCheck = append(repoNamesToCheck, fmt.Sprintf("Repository invite: %s/%s", gitServerURL, repo.Repo.FullName))
 	}
 
 	// repo invites
@@ -130,8 +132,8 @@ func (o *Options) Run() error {
 	}
 
 	var orgNamesToCheck []string
-	for i, org := range orgInvites {
-		orgNamesToCheck = append(orgNamesToCheck, fmt.Sprintf("%d. Organization invite: %s/%s", i+1, gitServerURL, org.OrganizationName))
+	for _, org := range orgInvites {
+		orgNamesToCheck = append(orgNamesToCheck, fmt.Sprintf("Organization invite: %s/%s", gitServerURL, org.OrganizationName))
 	}
 
 	// org invites
@@ -187,13 +189,9 @@ func (o *Options) acceptRepoInvites(invites []string) error {
 		return errors.Wrap(err, "failed to get repositories to accept")
 	}
 	for _, r := range reposToAccept {
-		id, err := strconv.ParseInt(o.OriginalRepos[r], 10, 64)
+		_, err = o.client.Users.AcceptInvitation(o.ctx, o.OriginalRepos[r])
 		if err != nil {
-			return errors.Wrapf(err, "failed to convert %s to an int64", o.OriginalRepos[r])
-		}
-		_, err = o.client.Users.AcceptInvitation(o.ctx, id)
-		if err != nil {
-			return errors.Wrapf(err, "failed to accept invite for repository %s", r)
+			return errors.Wrapf(err, "failed to accept invite %d for repository %s", o.OriginalRepos[r], r)
 		}
 	}
 	log.Logger().Infof("accepted invites to repositories %v", reposToAccept)
