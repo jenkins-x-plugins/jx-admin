@@ -206,7 +206,6 @@ func (o *Options) acceptOrgInvites(invites []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get organisations to accept")
 	}
-	log.Logger().Infof("gonna accept orgs %v", orgs)
 	for _, org := range orgs {
 		_, err = o.client.Organizations.AcceptOrganizationInvitation(o.ctx, org)
 		if err != nil {
