@@ -10,7 +10,7 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/jenkins-x/go-scm v1.5.170
+	github.com/jenkins-x/go-scm v1.5.177
 	github.com/jenkins-x/jx-api v0.0.20
 	github.com/jenkins-x/jx-helpers v1.0.66
 	github.com/jenkins-x/jx-kube-client v0.0.8
