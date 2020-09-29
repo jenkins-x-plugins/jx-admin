@@ -9,7 +9,7 @@ require (
 	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jenkins-x/go-scm v1.5.177
-	github.com/jenkins-x/jx-api v0.0.20
+	github.com/jenkins-x/jx-api v0.0.24
 	github.com/jenkins-x/jx-helpers v1.0.82
 	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.11
