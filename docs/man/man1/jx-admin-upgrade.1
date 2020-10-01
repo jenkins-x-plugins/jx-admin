@@ -54,6 +54,10 @@ Upgrades your environment git repository to use the latest helm 3 / helmfile and
 \[la]https://gitlab.com\[ra]
 
 .PP
+\fB\-\-git\-token\fP=""
+    the git token used to operate on the git repository
+
+.PP
 \fB\-g\fP, \fB\-\-git\-url\fP=""
     The git repository to clone to upgrade
 
@@ -69,10 +73,6 @@ Upgrades your environment git repository to use the latest helm 3 / helmfile and
 .PP
 \fB\-\-latest\-release\fP[=false]
     upgrade to latest release tag
-
-.PP
-\fB\-\-oauth\fP[=false]
-    Enables the use of OAuth login to github.com to get a github access token
 
 .PP
 \fB\-\-out\fP=""

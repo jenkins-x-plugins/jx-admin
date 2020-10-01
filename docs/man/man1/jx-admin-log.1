@@ -36,12 +36,16 @@ Views the boot Job logs in the cluster
     how long to wait for a Job to be active and a Pod to be ready
 
 .PP
+\fB\-g\fP, \fB\-\-git\-operator\-selector\fP="app=jx\-git\-operator"
+    the selector of the git operator pod
+
+.PP
 \fB\-h\fP, \fB\-\-help\fP[=false]
     help for log
 
 .PP
-\fB\-n\fP, \fB\-\-namespace\fP="jx"
-    the namespace where the boot jobs run
+\fB\-n\fP, \fB\-\-namespace\fP=""
+    the namespace where the boot jobs run. If not specified it will look in: jx\-git\-operator and jx
 
 .PP
 \fB\-\-poll\fP=1s
