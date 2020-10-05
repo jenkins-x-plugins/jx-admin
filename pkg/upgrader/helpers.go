@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx-helpers/pkg/files"
-	"github.com/jenkins-x/jx-helpers/pkg/kube"
+	v1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"

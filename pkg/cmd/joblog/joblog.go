@@ -1,6 +1,7 @@
 package joblog
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -9,16 +10,16 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
-	"github.com/jenkins-x/jx-helpers/pkg/kube"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/jobs"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/podlogs"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/pods"
-	"github.com/jenkins-x/jx-helpers/pkg/stringhelpers"
-	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
-	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
-	logger "github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jobs"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/podlogs"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/pods"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/stringhelpers"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
+	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
+	logger "github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
@@ -183,7 +184,7 @@ See: https://jenkins-x.io/docs/v3/guides/operator/
 		if err != nil {
 			logger.Logger().Warnf("failed to tail log: %s", err.Error())
 		}
-		pod, err = client.CoreV1().Pods(ns).Get(podName, metav1.GetOptions{})
+		pod, err = client.CoreV1().Pods(ns).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to get pod %s in namespace %s", podName, ns)
 		}
@@ -288,7 +289,7 @@ func (o *Options) waitForJobCompleteOrPodReady(client kubernetes.Interface, ns, 
 }
 
 func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string) (*batchv1.Job, error) {
-	jobList, err := client.BatchV1().Jobs(ns).List(metav1.ListOptions{
+	jobList, err := client.BatchV1().Jobs(ns).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -323,7 +324,7 @@ func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string)
 }
 
 func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name string) (bool, *batchv1.Job, error) {
-	job, err := client.BatchV1().Jobs(ns).Get(name, metav1.GetOptions{})
+	job, err := client.BatchV1().Jobs(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if job == nil || err != nil {
 		return false, nil, errors.Wrapf(err, "failed to list jobList in namespace %s name %s", ns, name)
 	}
@@ -346,7 +347,7 @@ func (o *Options) findGitOperatorNamespace(namespace string) (string, error) {
 	}
 	name := "jx-git-operator"
 	for _, ns := range namespaces {
-		_, err := o.KubeClient.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
+		_, err := o.KubeClient.AppsV1().Deployments(ns).Get(context.TODO(), name, metav1.GetOptions{})
 		if err == nil {
 			return ns, nil
 		}

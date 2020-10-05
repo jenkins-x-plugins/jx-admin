@@ -9,17 +9,17 @@ import (
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
-	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
-	"github.com/jenkins-x/jx-helpers/pkg/files"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
-	"github.com/jenkins-x/jx-helpers/pkg/input"
-	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
-	"github.com/jenkins-x/jx-helpers/pkg/scmhelpers"
-	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
-	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -119,9 +119,8 @@ func (o *EnvFactory) GetInput() input.Interface {
 }
 
 // CreateScmClient creates a new scm client
-func (o *EnvFactory) CreateScmClient(gitServer, owner, gitKind string) (*scm.Client, string, error) {
+func (o *EnvFactory) CreateScmClient(gitServer, _, gitKind string) (*scm.Client, string, error) {
 	o.ScmClientFactory.GitServerURL = gitServer
-	o.ScmClientFactory.Owner = owner
 	o.ScmClientFactory.GitKind = gitKind
 	scmClient, err := o.ScmClientFactory.Create()
 	if err != nil {
