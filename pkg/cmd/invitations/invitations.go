@@ -5,26 +5,26 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
 
-	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input/survey"
 
-	"github.com/jenkins-x/jx-helpers/pkg/input"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input"
 
 	"github.com/jenkins-x/go-scm/scm"
 
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/loadcreds"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/loadcreds"
 
-	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx-helpers/pkg/scmhelpers"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
 
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/spf13/cobra"
 )
 

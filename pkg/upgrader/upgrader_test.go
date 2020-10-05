@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx-admin/pkg/upgrader"
-	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx-api/pkg/config"
+	v1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/v3/pkg/config"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 )

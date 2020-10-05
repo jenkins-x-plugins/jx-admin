@@ -14,23 +14,23 @@ import (
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-admin/pkg/upgrader"
-	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
-	"github.com/jenkins-x/jx-helpers/pkg/files"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/cli"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
-	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
-	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
-	"github.com/jenkins-x/jx-logging/pkg/log"
+	v1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/cli"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
+	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
-	"github.com/jenkins-x/jx-helpers/pkg/versionstream"
-	"github.com/jenkins-x/jx-helpers/pkg/versionstream/versionstreamrepo"
+	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/versionstream"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/versionstream/versionstreamrepo"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -117,7 +117,7 @@ func (o *Options) Run() error {
 			return errors.Wrapf(err, "failed to get current namespace")
 		}
 	}
-	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrapf(err, "failed to list Jenkins X Environments in namespace %s", ns)
 	}
@@ -498,7 +498,7 @@ func (o *Options) removeOldDirs(dir string) error {
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
 func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface, ns, outDir string) error {
 	// lets write the SourceRepository resources to the repositories folder...
-	srList, err := jxClient.JenkinsV1().SourceRepositories(ns).List(metav1.ListOptions{})
+	srList, err := jxClient.JenkinsV1().SourceRepositories(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrapf(err, "failed to query the SourceRepository resources in namespace %s", ns)
 	}
@@ -511,7 +511,7 @@ func (o *Options) writeAdditionalHelmTemplateFiles(jxClient versioned.Interface,
 
 // writeAdditionalHelmTemplateFiles lets store to git any extra resources managed outside of the regular boot charts
 func (o *Options) writeNonHelmManagedResources(jxClient versioned.Interface, ns, dir string) error {
-	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrapf(err, "failed to query the PipelineActivity resources in namespace %s", ns)
 	}

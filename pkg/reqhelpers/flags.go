@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx-api/pkg/config"
-	"github.com/jenkins-x/jx-helpers/pkg/gitclient/giturl"
+	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
 	"github.com/spf13/cobra"
 )
 
