@@ -8,7 +8,7 @@ require (
 	github.com/jenkins-x/go-scm v1.5.177
 	github.com/jenkins-x/jx-api/v3 v3.0.0
 	github.com/jenkins-x/jx-helpers/v3 v3.0.0
-	github.com/jenkins-x/jx-kube-client/v3 v3.0.0
+	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
 	github.com/jenkins-x/jx-logging/v3 v3.0.0
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
