@@ -2,7 +2,7 @@ package common
 
 const (
 	// DefaultOperatorNamespace the default namespace used to install the git operato
-	DefaultOperatorNamespace = "jx"
+	DefaultOperatorNamespace = "jx-git-operator"
 
 	// DefaultBootRepository default git repo for boot with helm 3
 	DefaultBootRepository = "https://github.com/jenkins-x/jx3-boot-config.git"
