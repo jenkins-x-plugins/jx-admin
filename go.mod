@@ -3,13 +3,13 @@ module github.com/jenkins-x/jx-admin
 require (
 	cloud.google.com/go v0.55.0 // indirect
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/google/go-cmp v0.4.1
+	github.com/google/go-cmp v0.5.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/jenkins-x/go-scm v1.5.177
-	github.com/jenkins-x/jx-api/v3 v3.0.0
-	github.com/jenkins-x/jx-helpers/v3 v3.0.0
-	github.com/jenkins-x/jx-kube-client/v3 v3.0.0
-	github.com/jenkins-x/jx-logging/v3 v3.0.0
+	github.com/jenkins-x/go-scm v1.5.188
+	github.com/jenkins-x/jx-api/v3 v3.0.1
+	github.com/jenkins-x/jx-helpers/v3 v3.0.9
+	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
+	github.com/jenkins-x/jx-logging/v3 v3.0.2
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1
