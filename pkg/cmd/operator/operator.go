@@ -15,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/gitconfig"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
@@ -305,13 +304,13 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 
 	}
 	if o.GitToken == "" {
+		requirements, _, err := config.LoadRequirementsConfig(o.Dir, false)
+		if err != nil {
+			return answer, errors.Wrapf(err, "cannot load requirements file in dir %s so cannot determine git kind", o.Dir)
+		}
+		giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Cluster.GitKind, requirements.Cluster.GitServer, o.GitUserName, os.Stdout)
+
 		if !o.BatchMode {
-			requirements, _, err := config.LoadRequirementsConfig(o.Dir, false)
-			if err != nil {
-				return answer, errors.Wrapf(err, "cannot load requirements file in dir %s so cannot determine git kind", o.Dir)
-			}
-			ff := files.GetIOFileHandles(nil)
-			giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Cluster.GitKind, requirements.Cluster.GitServer, o.GitUserName, ff.Out)
 			i := survey.NewInput()
 			o.GitToken, err = i.PickPassword("Enter Bot Git token the Kubernetes operator will use to clone the environment git repository", "The Kubernetes Git Operator synchronises the environment git repository into the cluster, the token only requires read repository permissions and the token is stored in a Kubernetes secrets the job access")
 			if err != nil {
