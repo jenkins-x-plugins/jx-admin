@@ -2,7 +2,7 @@ package plugins
 
 const (
 	// HelmVersion the default version of helm to use
-	HelmVersion = "3.2.4"
+	HelmVersion = "3.4.0"
 
 	// HelmfileVersion the default version of helmfile to use
 	HelmfileVersion = "0.125.2"
