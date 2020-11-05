@@ -118,6 +118,14 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to find the git operator namespace")
 	}
 
+	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get jobs")
+	}
+
+	if len(jobs) <= 1 {
+		o.ActiveMode = true
+	}
 	if o.ActiveMode {
 		err = o.waitForGitOperator(client, ns, selector)
 		if err != nil {
@@ -125,7 +133,7 @@ func (o *Options) Run() error {
 		}
 		return o.waitForActiveJob(client, ns, selector, info, containerName)
 	}
-	return o.pickJobToLog(client, ns, selector)
+	return o.pickJobToLog(client, ns, selector, jobs)
 }
 
 func (o *Options) waitForGitOperator(client kubernetes.Interface, ns, selector string) error {
@@ -404,12 +412,7 @@ func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name strin
 	return false, job, nil
 }
 
-func (o *Options) pickJobToLog(client kubernetes.Interface, ns, selector string) error {
-	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get jobs")
-	}
-
+func (o *Options) pickJobToLog(client kubernetes.Interface, ns string, selector string, jobs []batchv1.Job) error {
 	var names []string
 	m := map[string]*batchv1.Job{}
 	for i := range jobs {
