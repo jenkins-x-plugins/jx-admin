@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx-admin/pkg/bootjobs"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -44,7 +45,6 @@ type Options struct {
 	Duration            time.Duration
 	PollPeriod          time.Duration
 	NoTail              bool
-	BatchMode           bool
 	ShaMode             bool
 	ActiveMode          bool
 	ErrOut              io.Writer
@@ -54,11 +54,6 @@ type Options struct {
 	timeEnd             time.Time
 	podStatusMap        map[string]string
 }
-
-const (
-	// LabelCommitSHA the label added to git operator Jobs to indicate the commit sha
-	LabelCommitSHA = "git-operator.jenkins.io/commit-sha"
-)
 
 var (
 	info = termcolor.ColorInfo
@@ -103,11 +98,7 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
 	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
 
-	defaultBatchMode := false
-	if os.Getenv("JX_BATCH_MODE") == "true" {
-		defaultBatchMode = true
-	}
-	command.PersistentFlags().BoolVarP(&options.BatchMode, "batch-mode", "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
+	options.BaseOptions.AddBaseFlags(command)
 
 	return command, options
 }
@@ -122,7 +113,7 @@ func (o *Options) Run() error {
 	selector := o.JobSelector
 	containerName := o.ContainerName
 
-	ns, err := o.findGitOperatorNamespace(o.Namespace)
+	ns, err := bootjobs.FindGitOperatorNamespace(client, o.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find the git operator namespace")
 	}
@@ -377,7 +368,7 @@ func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string)
 			job := &jobList.Items[i]
 			labels := job.Labels
 			if labels != nil {
-				if o.CommitSHA == labels[LabelCommitSHA] {
+				if o.CommitSHA == labels[bootjobs.LabelCommitSHA] {
 					return job, nil
 				}
 			}
@@ -413,26 +404,8 @@ func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name strin
 	return false, job, nil
 }
 
-func (o *Options) findGitOperatorNamespace(namespace string) (string, error) {
-	namespaces := []string{"jx", "jx-git-operator"}
-	if stringhelpers.StringArrayIndex(namespaces, namespace) < 0 {
-		namespaces = append(namespaces, namespace)
-	}
-	name := "jx-git-operator"
-	for _, ns := range namespaces {
-		_, err := o.KubeClient.AppsV1().Deployments(ns).Get(context.TODO(), name, metav1.GetOptions{})
-		if err == nil {
-			return ns, nil
-		}
-		if !apierrors.IsNotFound(err) {
-			return ns, errors.Wrapf(err, "failed to find Deployment %s in namespace %s", name, ns)
-		}
-	}
-	return namespace, errors.Errorf("failed to find Deployment %s in namespaces %s", name, strings.Join(namespaces, ", "))
-}
-
 func (o *Options) pickJobToLog(client kubernetes.Interface, ns, selector string) error {
-	jobs, err := o.getJobs(client, ns, selector)
+	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get jobs")
 	}
@@ -477,37 +450,6 @@ func JobStatus(j *batchv1.Job) string {
 		return "Running"
 	}
 	return "Pending"
-}
-
-func (o *Options) getJobs(client kubernetes.Interface, ns, selector string) ([]batchv1.Job, error) {
-	jobList, err := client.BatchV1().Jobs(ns).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "failed to list jobList in namespace %s selector %s", ns, selector)
-	}
-
-	answer := jobList.Items
-	if o.CommitSHA != "" {
-		var filtered []batchv1.Job
-		for _, job := range answer {
-			labels := job.Labels
-			if labels != nil {
-				sha := labels[LabelCommitSHA]
-				if strings.Contains(sha, o.CommitSHA) {
-					filtered = append(filtered, job)
-				}
-			}
-		}
-		answer = filtered
-	}
-
-	sort.Slice(answer, func(i, j int) bool {
-		j1 := answer[i]
-		j2 := answer[j]
-		return j2.CreationTimestamp.Before(&j1.CreationTimestamp)
-	})
-	return answer, nil
 }
 
 func verifyContainerName(pod *corev1.Pod, name string) error {
