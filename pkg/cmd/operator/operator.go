@@ -259,11 +259,7 @@ func (o *Options) findChartVersion(_ *config.RequirementsConfig) (string, error)
 }
 
 func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
-	gitInfo, err := giturl.ParseGitURL(gitURL)
-	if err != nil {
-		return gitURL, errors.Wrapf(err, "failed to parse git URL")
-	}
-	answer := gitInfo.HttpsURL()
+	answer := gitURL
 
 	u, err := url.Parse(answer)
 	if err != nil {
