@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -242,6 +243,11 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 
 		// lets verify the container name
 		err = verifyContainerName(pod, containerName)
+		if err != nil {
+			return err
+		}
+		// check the pod isn't in a state that's going to cause an error.
+		err = verifyPodIsNotPending(client, pod)
 		if err != nil {
 			return err
 		}
@@ -465,4 +471,45 @@ func verifyContainerName(pod *corev1.Pod, name string) error {
 	}
 	sort.Strings(names)
 	return errors.Errorf("invalid container name %s for pod %s. Available names: %s", name, pod.Name, strings.Join(names, ", "))
+}
+
+func verifyPodIsNotPending(client kubernetes.Interface, pod *corev1.Pod) error {
+	if isPodPending(pod) == false {
+		return nil
+	}
+
+	logger.Logger().Infof("pod is in %s state. retrying until it is ready.", pod.Status.Phase)
+
+	i := 0
+	retrys := 5
+
+	for i < retrys {
+		logger.Logger().Infof("retrying %d more times.", retrys-i)
+		time.Sleep(2 * time.Second)
+		if isPodPending(pod) == false {
+			return nil
+		}
+
+		// refresh the pod to get latest status
+		newPod, err := client.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		pod = newPod
+		i++
+	}
+
+	if isPodPending(pod) {
+		return errors.Errorf("pod %s is in state %s.", pod.Name, pod.Status.Phase)
+	}
+
+	return nil
+}
+
+func isPodPending(pod *corev1.Pod) bool {
+	if pod.Status.Phase == v1.PodPending {
+		return true
+	}
+	return false
 }
