@@ -299,7 +299,7 @@ func (o *Options) Validate() error {
 	}
 	if o.ShaMode && o.CommitSHA == "" {
 		o.CommitSHA = os.Getenv("PULL_BASE_SHA")
-		if o.ShaMode && o.CommitSHA == "" {
+		if o.CommitSHA == "" {
 			return errors.Errorf("you have specified --sha-mode but no $PULL_BASE_SHA is defined or --commit-sha option supplied")
 		}
 	}
