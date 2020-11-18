@@ -47,7 +47,7 @@ type Options struct {
 	PollPeriod          time.Duration
 	NoTail              bool
 	ShaMode             bool
-	ActiveMode          bool
+	WaitMode            bool
 	ErrOut              io.Writer
 	Out                 io.Writer
 	KubeClient          kubernetes.Interface
@@ -94,7 +94,7 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
 	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
 	command.Flags().StringVarP(&options.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
-	command.Flags().BoolVarP(&options.ActiveMode, "active", "a", false, "wait for the next active Job to start")
+	command.Flags().BoolVarP(&options.WaitMode, "wait", "w", false, "wait for the next active Job to start")
 	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
 	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
 	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
@@ -124,17 +124,17 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to get jobs")
 	}
 
-	if !o.ActiveMode && len(jobs) <= 1 {
+	if !o.WaitMode && len(jobs) <= 1 {
 		if len(jobs) == 0 {
-			o.ActiveMode = true
+			o.WaitMode = true
 		} else {
 			j := jobs[0]
 			if j.Status.Active > 0 {
-				o.ActiveMode = true
+				o.WaitMode = true
 			}
 		}
 	}
-	if o.ActiveMode {
+	if o.WaitMode {
 		err = o.waitForGitOperator(client, ns, selector)
 		if err != nil {
 			return errors.Wrapf(err, "failed to wait for git operator")

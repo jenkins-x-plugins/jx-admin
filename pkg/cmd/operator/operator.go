@@ -198,7 +198,7 @@ func (o *Options) Run() error {
 	if o.NoLog {
 		return nil
 	}
-	o.JobLogOptions.ActiveMode = true
+	o.JobLogOptions.WaitMode = true
 	err = o.JobLogOptions.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to tail the Jenkins X boot Job pods")
