@@ -124,8 +124,15 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to get jobs")
 	}
 
-	if len(jobs) <= 1 {
-		o.ActiveMode = true
+	if !o.ActiveMode && len(jobs) <= 1 {
+		if len(jobs) == 0 {
+			o.ActiveMode = true
+		} else {
+			j := jobs[0]
+			if j.Status.Active > 0 {
+				o.ActiveMode = true
+			}
+		}
 	}
 	if o.ActiveMode {
 		err = o.waitForGitOperator(client, ns, selector)
@@ -180,7 +187,7 @@ func (o *Options) waitForActiveJob(client kubernetes.Interface, ns string, selec
 func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns string, selector string, containerName string, job *batchv1.Job) error {
 	var foundPods []string
 	for {
-		complete, pod, err := o.waitForJobCompleteOrPodReady(client, ns, selector, job.Name)
+		complete, pod, err := o.waitForJobCompleteOrPodRunning(client, ns, selector, job.Name)
 		if err != nil {
 			return err
 		}
@@ -246,10 +253,14 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 		if err != nil {
 			return err
 		}
-		// check the pod isn't in a state that's going to cause an error.
-		err = verifyPodIsNotPending(client, pod)
+
+		// wait for a pod to be running, ready or completed
+		condition := func(pod *v1.Pod) (bool, error) {
+			return pods.IsPodReady(pod) || pods.IsPodCompleted(pod) || pod.Status.Phase == corev1.PodRunning, nil
+		}
+		err = pods.WaitforPodNameCondition(client, ns, pod.Name, o.Duration, condition)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to wait for pod %s to be running", pod.Name)
 		}
 		podName := pod.Name
 		logger.Logger().Infof("\ntailing boot Job pod %s\n\n", info(podName))
@@ -330,7 +341,7 @@ func (o *Options) waitForLatestJob(client kubernetes.Interface, ns, selector str
 	}
 }
 
-func (o *Options) waitForJobCompleteOrPodReady(client kubernetes.Interface, ns, selector, jobName string) (bool, *corev1.Pod, error) {
+func (o *Options) waitForJobCompleteOrPodRunning(client kubernetes.Interface, ns, selector, jobName string) (bool, *corev1.Pod, error) {
 	if o.podStatusMap == nil {
 		o.podStatusMap = map[string]string{}
 	}
@@ -354,7 +365,7 @@ func (o *Options) waitForJobCompleteOrPodReady(client kubernetes.Interface, ns, 
 				logger.Logger().Infof("pod %s has status %s", termcolor.ColorInfo(pod.Name), termcolor.ColorInfo(status))
 				o.podStatusMap[pod.Name] = status
 			}
-			if pods.IsPodReady(pod) {
+			if pod.Status.Phase == v1.PodRunning || pods.IsPodReady(pod) {
 				return false, pod, nil
 			}
 		}
@@ -471,45 +482,4 @@ func verifyContainerName(pod *corev1.Pod, name string) error {
 	}
 	sort.Strings(names)
 	return errors.Errorf("invalid container name %s for pod %s. Available names: %s", name, pod.Name, strings.Join(names, ", "))
-}
-
-func verifyPodIsNotPending(client kubernetes.Interface, pod *corev1.Pod) error {
-	if isPodPending(pod) == false {
-		return nil
-	}
-
-	logger.Logger().Infof("pod is in %s state. retrying until it is ready.", pod.Status.Phase)
-
-	i := 0
-	retrys := 5
-
-	for i < retrys {
-		logger.Logger().Infof("retrying %d more times.", retrys-i)
-		time.Sleep(2 * time.Second)
-		if isPodPending(pod) == false {
-			return nil
-		}
-
-		// refresh the pod to get latest status
-		newPod, err := client.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		pod = newPod
-		i++
-	}
-
-	if isPodPending(pod) {
-		return errors.Errorf("pod %s is in state %s.", pod.Name, pod.Status.Phase)
-	}
-
-	return nil
-}
-
-func isPodPending(pod *corev1.Pod) bool {
-	if pod.Status.Phase == v1.PodPending {
-		return true
-	}
-	return false
 }
