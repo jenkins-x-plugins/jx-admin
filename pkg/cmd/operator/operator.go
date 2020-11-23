@@ -40,6 +40,7 @@ type Options struct {
 	ReleaseName       string
 	ChartName         string
 	ChartVersion      string
+	GitSetupCommands  []string
 	DryRun            bool
 	NoSwitchNamespace bool
 	NoLog             bool
@@ -98,6 +99,7 @@ func NewCmdOperator() (*cobra.Command, *Options) {
 	command.Flags().StringVarP(&options.GitUserName, "username", "", "", "specify the git user name the operator will use to clone the environment git repository if there is no username in the git URL. If not specified defaults to $GIT_USERNAME")
 	command.Flags().StringVarP(&options.GitToken, "token", "", "", "specify the git token the operator will use to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT_TOKEN")
 	command.Flags().StringVarP(&options.Namespace, "namespace", "n", common.DefaultOperatorNamespace, "the namespace to install the git operator")
+	command.Flags().StringArrayVarP(&options.GitSetupCommands, "setup", "", nil, "a git configuration command to configure git inside the git operator pod to deal with things like insecure docker registries etc. e.g. supply 'git config --global http.sslverify false' to disable TLS verification")
 	command.Flags().BoolVarP(&options.NoLog, "no-log", "", false, "to disable viewing the logs of the boot Job pods")
 	command.Flags().BoolVarP(&options.NoSwitchNamespace, "no-switch-namespace", "", false, "to disable switching to the installation namespace after installing the operator")
 
@@ -226,6 +228,10 @@ func (o *Options) getCommandLine(helmBin, gitURL string) cmdrunner.Command {
 	}
 	if o.Namespace != "" {
 		args = append(args, "--namespace", o.Namespace)
+	}
+	if len(o.GitSetupCommands) > 0 {
+		gitInitCommands := strings.Join(o.GitSetupCommands, "; ")
+		args = append(args, "--set", fmt.Sprintf("gitInitCommands=%s", gitInitCommands))
 	}
 	args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
 
