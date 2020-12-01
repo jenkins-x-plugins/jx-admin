@@ -9,8 +9,8 @@ import (
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
-	"github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient"
@@ -53,11 +53,11 @@ func (o *EnvFactory) AddFlags(cmd *cobra.Command) {
 // CreateDevEnvGitRepository creates the dev environment git repository from the given directory
 func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error {
 	o.OutDir = dir
-	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
+	requirementsResource, fileName, err := jxcore.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements from %s", dir)
 	}
-
+	requirements := &requirementsResource.Spec
 	dev := reqhelpers.GetDevEnvironmentConfig(requirements)
 	if dev == nil {
 		return fmt.Errorf("the file %s does not contain a development environment", fileName)
@@ -145,7 +145,7 @@ func (o *EnvFactory) VerifyPreInstall(disableVerifyPackages bool, dir string) er
 }
 
 // PrintBootJobInstructions prints the instructions to run the installer
-func (o *EnvFactory) PrintBootJobInstructions(requirements *config.RequirementsConfig, link string) error {
+func (o *EnvFactory) PrintBootJobInstructions(requirements *jxcore.RequirementsConfig, link string) error {
 	gitInfo, err := giturl.ParseGitURL(link)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s", link)
