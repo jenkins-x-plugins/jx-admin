@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jenkins-x/jx-admin/pkg/common"
-	v1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/naming"
@@ -24,13 +23,17 @@ type RequirementFlags struct {
 	IngressKind                                                     string
 	SecretStorage                                                   string
 	AutoUpgrade, EnvironmentGitPublic, GitPublic, EnvironmentRemote bool
-	GitOps, Kaniko, Terraform, TLS                                  bool
+	TLS                                                             bool
 	Canary, HPA                                                     bool
 	VaultRecreateBucket, VaultDisableURLDiscover                    bool
+	LogsURL                                                         string
+	BackupsURL                                                      string
+	ReportsURL                                                      string
+	RepositoryURL                                                   string
 }
 
 // GetDevEnvironmentConfig returns the dev environment for the given requirements or nil
-func GetDevEnvironmentConfig(requirements *config.RequirementsConfig) *config.EnvironmentConfig {
+func GetDevEnvironmentConfig(requirements *jxcore.RequirementsConfig) *jxcore.EnvironmentConfig {
 	for k := range requirements.Environments {
 		e := requirements.Environments[k]
 		if e.Key == "dev" {
@@ -42,12 +45,12 @@ func GetDevEnvironmentConfig(requirements *config.RequirementsConfig) *config.En
 
 // OverrideRequirements allows CLI overrides
 func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirementsFile string,
-	outputRequirements *config.RequirementsConfig, flags *RequirementFlags, environment string) error {
-	requirements, fileName, err := config.LoadRequirementsConfig(dir, false)
+	outputRequirements *jxcore.RequirementsConfig, flags *RequirementFlags, environment string) error {
+	requirementsResource, fileName, err := jxcore.LoadRequirementsConfig(dir, false)
 	if err != nil {
 		return err
 	}
-
+	requirements := &requirementsResource.Spec
 	if customRequirementsFile != "" {
 		exists, err := files.FileExists(customRequirementsFile)
 		if err != nil {
@@ -56,12 +59,11 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 		if !exists {
 			return fmt.Errorf("custom requirements file %s does not exist", customRequirementsFile)
 		}
-		requirements, err = config.LoadRequirementsConfigFile(customRequirementsFile, false)
+		requirementsResource, err = jxcore.LoadRequirementsConfigFile(customRequirementsFile, false)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load: %s", customRequirementsFile)
 		}
 
-		UpgradeExistingRequirements(requirements)
 	}
 
 	*outputRequirements = *requirements
@@ -90,7 +92,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 		return errors.Wrap(err, "failed to reparse arguments")
 	}
 
-	err = applyDefaults(cmd, outputRequirements, flags)
+	outputRequirements, err = applyDefaults(cmd, outputRequirements, flags)
 	if err != nil {
 		return err
 	}
@@ -107,7 +109,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 			if clusterName != "" {
 				repository = naming.ToValidName("environment-" + clusterName + "-" + environment)
 			}
-			outputRequirements.Environments = append(outputRequirements.Environments, config.EnvironmentConfig{
+			outputRequirements.Environments = append(outputRequirements.Environments, jxcore.EnvironmentConfig{
 				Key:               "dev",
 				Owner:             outputRequirements.Cluster.EnvironmentGitOwner,
 				Repository:        repository,
@@ -117,7 +119,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 				PromotionStrategy: promoteStrategy,
 			})
 		}
-		outputRequirements.Webhook = config.WebhookTypeLighthouse
+		outputRequirements.Webhook = jxcore.WebhookTypeLighthouse
 	}
 
 	// lets default an ingress service type if there is none
@@ -127,14 +129,12 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	}
 	*/
 
-	if outputRequirements.VersionStream.URL == "" {
-		outputRequirements.VersionStream.URL = common.DefaultVersionsURL
-	}
 	if string(outputRequirements.SecretStorage) == "" {
-		outputRequirements.SecretStorage = config.SecretStorageTypeLocal
+		outputRequirements.SecretStorage = jxcore.SecretStorageTypeLocal
 	}
 
-	err = outputRequirements.SaveConfig(fileName)
+	requirementsResource.Spec = *outputRequirements
+	err = requirementsResource.SaveConfig(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save %s", fileName)
 	}
@@ -143,14 +143,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	return nil
 }
 
-// UpgradeExistingRequirements updates a custom requirements file for helm 3
-func UpgradeExistingRequirements(requirements *config.RequirementsConfig) {
-	requirements.GitOps = true
-	requirements.Helmfile = true
-	requirements.Webhook = config.WebhookTypeLighthouse
-}
-
-func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *RequirementFlags) error {
+func applyDefaults(cmd *cobra.Command, r *v1.RequirementsConfig, flags *RequirementFlags) (*v1.RequirementsConfig, error) {
 	// override boolean flags if specified
 	if FlagChanged(cmd, "autoupgrade") {
 		r.AutoUpdate.Enabled = flags.AutoUpgrade
@@ -160,15 +153,6 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	}
 	if FlagChanged(cmd, "git-public") {
 		r.Cluster.GitPublic = flags.GitPublic
-	}
-	if FlagChanged(cmd, "gitops") {
-		r.GitOps = flags.GitOps
-	}
-	if FlagChanged(cmd, "kaniko") {
-		r.Kaniko = flags.Kaniko
-	}
-	if FlagChanged(cmd, "terraform") {
-		r.Terraform = flags.Terraform
 	}
 	if FlagChanged(cmd, "vault-disable-url-discover") {
 		r.Vault.DisableURLDiscovery = flags.VaultDisableURLDiscover
@@ -199,10 +183,10 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	*/
 
 	if flags.Repository != "" {
-		r.Repository = config.RepositoryType(flags.Repository)
+		r.Repository = jxcore.RepositoryType(flags.Repository)
 	}
 	if flags.SecretStorage != "" {
-		r.SecretStorage = config.SecretStorageType(flags.SecretStorage)
+		r.SecretStorage = jxcore.SecretStorageType(flags.SecretStorage)
 	}
 
 	if flags.EnvironmentRemote {
@@ -218,27 +202,34 @@ func applyDefaults(cmd *cobra.Command, r *config.RequirementsConfig, flags *Requ
 	gitKind := r.Cluster.GitKind
 	gitKinds := append(giturl.KindGits, "fake")
 	if gitKind != "" && stringhelpers.StringArrayIndex(gitKinds, gitKind) < 0 {
-		return options.InvalidOption("git-kind", gitKind, giturl.KindGits)
+		return nil, options.InvalidOption("git-kind", gitKind, giturl.KindGits)
 	}
 
 	// default flags if associated values
 	if r.AutoUpdate.Schedule != "" {
 		r.AutoUpdate.Enabled = true
 	}
-	if r.Ingress.TLS.Email != "" {
+	if r.Ingress.TLS != nil && r.Ingress.TLS.Email != "" {
 		r.Ingress.TLS.Enabled = true
 	}
 
 	// enable storage if we specify a URL
-	storage := &r.Storage
-	if storage.Logs.URL != "" && storage.Reports.URL == "" {
-		storage.Reports.URL = storage.Logs.URL
+	if r.GetStorageURL("logs") != "" && r.GetStorageURL("reports") == "" {
+		r.AddOrUpdateStorageURL("reports", r.GetStorageURL("logs"))
 	}
-	defaultStorage(&storage.Backup)
-	defaultStorage(&storage.Logs)
-	defaultStorage(&storage.Reports)
-	defaultStorage(&storage.Repository)
-	return nil
+	if flags.LogsURL != "" {
+		r.AddOrUpdateStorageURL("logs", flags.LogsURL)
+	}
+	if flags.BackupsURL != "" {
+		r.AddOrUpdateStorageURL("backup", flags.BackupsURL)
+	}
+	if flags.ReportsURL != "" {
+		r.AddOrUpdateStorageURL("reports", flags.ReportsURL)
+	}
+	if flags.RepositoryURL != "" {
+		r.AddOrUpdateStorageURL("repository", flags.RepositoryURL)
+	}
+	return r, nil
 }
 
 // FlagChanged returns true if the given flag was supplied on the command line
@@ -252,14 +243,8 @@ func FlagChanged(cmd *cobra.Command, name string) bool {
 	return false
 }
 
-func defaultStorage(storage *config.StorageEntryConfig) {
-	if storage.URL != "" {
-		storage.Enabled = true
-	}
-}
-
 // GitKind returns the git kind for the development environment or empty string if it can't be found
-func GitKind(devSource v1.EnvironmentRepository, r *config.RequirementsConfig) string {
+func GitKind(devSource v1.EnvironmentRepository, r *jxcore.RequirementsConfig) string {
 	answer := string(devSource.Kind)
 	if answer == "" {
 		if r != nil {

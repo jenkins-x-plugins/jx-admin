@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
-	v1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
-	v1fake "github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	v1fake "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner/fakerunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/cli"
@@ -140,11 +140,11 @@ func TestCreate(t *testing.T) {
 		expectedGitURL := fmt.Sprintf("https://fake.com/jstrachan/environment-%s-%s.git", tc.Name, co.Environment)
 		assert.Equal(t, expectedGitURL, text, "output Git URL")
 
-		requirements, _, err := config.LoadRequirementsConfig(co.OutDir, false)
+		requirementsResource, _, err := jxcore.LoadRequirementsConfig(co.OutDir, false)
 		require.NoError(t, err, "failed to load requirements from %s", co.OutDir)
+		requirements := &requirementsResource.Spec
 		assert.Equal(t, true, requirements.Cluster.EnvironmentGitPublic, "requirements.Cluster.EnvironmentGitPublic")
 		assert.Equal(t, true, requirements.Cluster.GitPublic, "requirements.Cluster.GitPublic")
-		assert.NotEmpty(t, requirements.VersionStream.URL, "requirements.VersionStream.URL for %s", tc.Name)
 		assert.NotEmpty(t, string(requirements.SecretStorage), "requirements.SecretStorage for %s", tc.Name)
 
 		switch tc.Name {
@@ -205,7 +205,7 @@ func TestCreate(t *testing.T) {
 		*/
 
 		if tc.Name == "vault" {
-			assert.Equal(t, config.SecretStorageTypeVault, requirements.SecretStorage, "dev requirements.SecretStorage for test %s", tc.Name)
+			assert.Equal(t, jxcore.SecretStorageTypeVault, requirements.SecretStorage, "dev requirements.SecretStorage for test %s", tc.Name)
 			t.Logf("has vault secret storage for test %s", tc.Name)
 		}
 	}

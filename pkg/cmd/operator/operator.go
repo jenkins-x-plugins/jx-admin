@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-admin/pkg/plugins/helmplugin"
 	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
-	"github.com/jenkins-x/jx-api/v3/pkg/config"
+	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -242,7 +242,7 @@ func (o *Options) getCommandLine(helmBin, gitURL string) cmdrunner.Command {
 }
 
 //nolint
-func (o *Options) findChartVersion(_ *config.RequirementsConfig) (string, error) {
+func (o *Options) findChartVersion(_ *jxcore.RequirementsConfig) (string, error) {
 	/*
 		if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {
 			// relative chart folder so ignore version
@@ -307,11 +307,11 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 
 	}
 	if o.GitToken == "" {
-		requirements, _, err := config.LoadRequirementsConfig(o.Dir, false)
+		requirements, _, err := jxcore.LoadRequirementsConfig(o.Dir, false)
 		if err != nil {
 			return answer, errors.Wrapf(err, "cannot load requirements file in dir %s so cannot determine git kind", o.Dir)
 		}
-		giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Cluster.GitKind, requirements.Cluster.GitServer, o.GitUserName, os.Stdout)
+		giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Spec.Cluster.GitKind, requirements.Spec.Cluster.GitServer, o.GitUserName, os.Stdout)
 
 		if !o.BatchMode {
 			i := survey.NewInput()
