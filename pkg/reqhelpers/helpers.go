@@ -5,7 +5,7 @@ import (
 	"os"
 
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
-	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/naming"
@@ -143,7 +143,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	return nil
 }
 
-func applyDefaults(cmd *cobra.Command, r *v1.RequirementsConfig, flags *RequirementFlags) (*v1.RequirementsConfig, error) {
+func applyDefaults(cmd *cobra.Command, r *jxcore.RequirementsConfig, flags *RequirementFlags) (*jxcore.RequirementsConfig, error) {
 	// override boolean flags if specified
 	if FlagChanged(cmd, "autoupgrade") {
 		r.AutoUpdate.Enabled = flags.AutoUpgrade
