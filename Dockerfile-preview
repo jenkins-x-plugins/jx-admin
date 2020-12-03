@@ -1,0 +1,3 @@
+FROM gcr.io/jenkinsxio/jx-boot:3.0.770
+
+COPY ./build/linux/jx-admin /usr/bin/jx-admin
