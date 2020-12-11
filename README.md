@@ -12,7 +12,7 @@
 
 ## Commands
 
-See the [jx-admin command reference](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-admin.md)
+See the [jx-admin command reference](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md)
 
 ## Using jx admin
 
