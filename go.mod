@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jenkins-x/go-scm v1.5.193
 	github.com/jenkins-x/jx-api/v4 v4.0.11
-	github.com/jenkins-x/jx-helpers/v3 v3.0.29
+	github.com/jenkins-x/jx-helpers/v3 v3.0.39
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
 	github.com/jenkins-x/jx-logging/v3 v3.0.2
 	github.com/magiconair/properties v1.8.1 // indirect
