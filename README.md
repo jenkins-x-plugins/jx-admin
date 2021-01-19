@@ -16,4 +16,4 @@ See the [jx-admin command reference](https://github.com/jenkins-x/jx-admin/blob/
 
 ## Using jx admin
 
-See the [Getting started guide](https://jenkins-x.io/docs/v3/getting-started/) for details
+See the [Getting started guide](https://jenkins-x.io/v3/admin/guides/jx3/) for details
