@@ -2,8 +2,10 @@ package bootjobs
 
 import (
 	"context"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/stringhelpers"
 	"github.com/pkg/errors"
@@ -43,6 +45,30 @@ func GetSortedJobs(client kubernetes.Interface, ns string, selector string, comm
 		return j2.CreationTimestamp.Before(&j1.CreationTimestamp)
 	})
 	return answer, nil
+}
+
+func WaitForGitOperatorNamespace(client kubernetes.Interface, ns string, timeout time.Duration) (string, error) {
+	timeEnd := time.Now().Add(timeout)
+	lastError := ""
+	for {
+		ns, err := FindGitOperatorNamespace(client, ns)
+		if err == nil && ns != "" {
+			return ns, nil
+		}
+
+		if err != nil {
+			errText := err.Error()
+			if errText != lastError {
+				log.Logger().Warnf(errText)
+				lastError = errText
+			}
+		}
+
+		if time.Now().After(timeEnd) {
+			return "", errors.Errorf("timed out after waiting for duration %s", timeout.String())
+		}
+		time.Sleep(time.Second)
+	}
 }
 
 // FindGitOperatorNamespace finds the git operator namespace

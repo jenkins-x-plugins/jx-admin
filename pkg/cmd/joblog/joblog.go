@@ -43,6 +43,7 @@ type Options struct {
 	GitOperatorSelector string
 	ContainerName       string
 	CommitSHA           string
+	DeploymentDuration  time.Duration
 	Duration            time.Duration
 	PollPeriod          time.Duration
 	NoTail              bool
@@ -98,6 +99,7 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
 	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
 	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
+	command.Flags().DurationVarP(&options.DeploymentDuration, "deploy-duration", "", time.Second*30, "time to wait for the git operator deployment to show up")
 
 	options.BaseOptions.AddBaseFlags(command)
 
@@ -114,7 +116,7 @@ func (o *Options) Run() error {
 	selector := o.JobSelector
 	containerName := o.ContainerName
 
-	ns, err := bootjobs.FindGitOperatorNamespace(client, o.Namespace)
+	ns, err := bootjobs.WaitForGitOperatorNamespace(client, o.Namespace, o.DeploymentDuration)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find the git operator namespace")
 	}
