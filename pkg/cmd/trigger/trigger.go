@@ -114,7 +114,7 @@ func (o *Options) Run() error {
 // Validate verifies the settings are correct and we can lazy create any required resources
 func (o *Options) Validate() error {
 	var err error
-	o.KubeClient, err = kube.LazyCreateKubeClient(o.KubeClient)
+	o.KubeClient, err = kube.LazyCreateKubeClientWithMandatory(o.KubeClient, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create kubernetes client")
 	}
