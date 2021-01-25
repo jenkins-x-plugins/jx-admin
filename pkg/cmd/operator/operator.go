@@ -40,12 +40,15 @@ type Options struct {
 	ReleaseName       string
 	ChartName         string
 	ChartVersion      string
+	HelmBin           string
 	GitSetupCommands  []string
 	DryRun            bool
 	NoSwitchNamespace bool
 	NoLog             bool
 	BatchMode         bool
 	JobLogOptions     joblog.Options
+	CommandRunner     cmdrunner.CommandRunner
+	Helmer            helmer.Helmer
 }
 
 var (
@@ -125,6 +128,9 @@ func (o *Options) AddFlags(command *cobra.Command) {
 
 // Run installs the git operator chart
 func (o *Options) Run() error {
+	if o.CommandRunner == nil {
+		o.CommandRunner = cmdrunner.QuietCommandRunner
+	}
 	if o.GitUserName == "" {
 		o.GitUserName = os.Getenv("GIT_USERNAME")
 	}
@@ -144,13 +150,21 @@ func (o *Options) Run() error {
 			return errors.Wrapf(err, "failed to ensure the git URL is valid")
 		}
 	}
-	helmBin, err := helmplugin.GetHelm3Binary()
-	if err != nil {
-		return err
+	if o.HelmBin == "" {
+		o.HelmBin, err = helmplugin.GetHelm3Binary()
+		if err != nil {
+			return err
+		}
+	}
+	if o.HelmBin == "" {
+		return errors.Errorf("no helm binary found")
 	}
 
 	// lets add helm repository for jx-labs
-	h := helmplugin.NewHelmer(helmBin, o.Dir)
+	if o.Helmer == nil {
+		o.Helmer = helmplugin.NewHelmer(o.HelmBin, o.Dir)
+	}
+	h := o.Helmer
 	_, err = helmer.AddHelmRepoIfMissing(h, helmer.JX3ChartRepository, "jx3", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add Jenkins X Labs chart repository")
@@ -161,7 +175,7 @@ func (o *Options) Run() error {
 		log.Logger().Warnf("failed to update helm repositories: %s", err.Error())
 	}
 
-	c := o.getCommandLine(helmBin, o.GitURL)
+	c := o.getCommandLine(o.HelmBin, o.GitURL)
 
 	// lets sanitize and format the command line so it looks nicer in the console output
 	// TODO replace with c.CLI() when we switch to jx-helpers
@@ -187,7 +201,7 @@ func (o *Options) Run() error {
 
 	log.Logger().Infof("running command:\n\n%s\n\n", termcolor.ColorInfo(commandLine))
 
-	_, err = c.RunWithoutRetry()
+	_, err = o.CommandRunner(c)
 	if err != nil {
 		return errors.Wrapf(err, "failed to run command %s", commandLine)
 	}
@@ -208,7 +222,7 @@ func (o *Options) Run() error {
 	return nil
 }
 
-func (o *Options) getCommandLine(helmBin, gitURL string) cmdrunner.Command {
+func (o *Options) getCommandLine(helmBin, gitURL string) *cmdrunner.Command {
 	username := o.GitUserName
 	password := o.GitToken
 
@@ -235,7 +249,7 @@ func (o *Options) getCommandLine(helmBin, gitURL string) cmdrunner.Command {
 	}
 	args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
 
-	return cmdrunner.Command{
+	return &cmdrunner.Command{
 		Name: helmBin,
 		Args: args,
 	}
@@ -302,10 +316,16 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 				return answer, errors.Wrap(err, "failed to get git username")
 			}
 		} else {
-			return answer, options.MissingOption("username")
 		}
 
 	}
+	if o.GitUserName == "" {
+		return answer, options.MissingOption("username")
+	}
+	if strings.Contains(o.GitUserName, "@") {
+		return answer, options.InvalidOptionf("username", o.GitUserName, "the git username should not contain '@'. maybe you used an email address rather than git username")
+	}
+
 	if o.GitToken == "" {
 		requirements, _, err := jxcore.LoadRequirementsConfig(o.Dir, false)
 		if err != nil {
