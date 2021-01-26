@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.55.0 // indirect
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/jenkins-x/go-scm v1.5.215
+	github.com/jenkins-x/go-scm v1.5.216
 	github.com/jenkins-x/jx-api/v4 v4.0.23
 	github.com/jenkins-x/jx-helpers/v3 v3.0.71
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.2
