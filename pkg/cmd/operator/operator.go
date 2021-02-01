@@ -382,5 +382,5 @@ func findGitURLFromDir(dir string) (string, error) {
 	if gitConfDir == "" {
 		return "", nil
 	}
-	return gitconfig.DiscoverUpstreamGitURL(gitConfDir)
+	return gitconfig.DiscoverUpstreamGitURL(gitConfDir, false)
 }

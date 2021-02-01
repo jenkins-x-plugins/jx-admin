@@ -255,8 +255,8 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 		}
 
 		// wait for a pod to be running, ready or completed
-		condition := func(pod *v1.Pod) (bool, error) {
-			return pods.IsPodReady(pod) || pods.IsPodCompleted(pod) || pod.Status.Phase == corev1.PodRunning, nil
+		condition := func(pod *v1.Pod) bool {
+			return pods.IsPodReady(pod) || pods.IsPodCompleted(pod) || pod.Status.Phase == corev1.PodRunning
 		}
 		err = pods.WaitforPodNameCondition(client, ns, pod.Name, o.Duration, condition)
 		if err != nil {
