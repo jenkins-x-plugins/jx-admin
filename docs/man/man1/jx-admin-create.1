@@ -40,10 +40,6 @@ Creates a new git repository for a new Jenkins X installation
     Enables batch mode which avoids prompting for user input
 
 .PP
-\fB\-\-boot\-config\-url\fP=""
-    specify the boot configuration git URL
-
-.PP
 \fB\-\-bucket\-backups\fP=""
     the bucket URL to store backups
 
@@ -138,10 +134,6 @@ Creates a new git repository for a new Jenkins X installation
     the git token used to operate on the git repository
 
 .PP
-\fB\-g\fP, \fB\-\-gitops\fP[=false]
-    enables or disables the use of gitops
-
-.PP
 \fB\-h\fP, \fB\-\-help\fP[=false]
     help for create
 
@@ -154,20 +146,12 @@ Creates a new git repository for a new Jenkins X installation
     The git URL to clone to fetch the initial set of files for a helm 3 / helmfile based git configuration if this command is not run inside a git clone or against a GitOps based cluster
 
 .PP
-\fB\-\-kaniko\fP[=false]
-    enables or disables the use of kaniko
-
-.PP
 \fB\-\-kaniko\-sa\fP=""
     configures the Kaniko service account name
 
 .PP
 \fB\-\-name\fP="jxgo"
     the helm release name t ouse
-
-.PP
-\fB\-n\fP, \fB\-\-namespace\fP=""
-    configures the namespace to use
 
 .PP
 \fB\-\-no\-operator\fP[=false]
@@ -218,10 +202,6 @@ Creates a new git repository for a new Jenkins X installation
     configures the secret storage kind. Possible values: local, vault
 
 .PP
-\fB\-\-terraform\fP[=false]
-    enables or disables the use of terraform
-
-.PP
 \fB\-\-tls\fP[=false]
     enable TLS for Ingress
 
@@ -264,22 +244,6 @@ Creates a new git repository for a new Jenkins X installation
 .PP
 \fB\-\-vault\-sa\fP=""
     specify the vault Service Account name
-
-.PP
-\fB\-\-velero\-ns\fP=""
-    specify the Velero Namespace
-
-.PP
-\fB\-\-velero\-sa\fP=""
-    specify the Velero Service Account name
-
-.PP
-\fB\-\-version\-stream\-ref\fP=""
-    specify the Version Stream git reference (branch, tag, sha)
-
-.PP
-\fB\-\-version\-stream\-url\fP=""
-    specify the Version Stream git URL
 
 .PP
 \fB\-z\fP, \fB\-\-zone\fP=""

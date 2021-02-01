@@ -64,6 +64,10 @@ Installs the git operator in a cluster
     to disable switching to the installation namespace after installing the operator
 
 .PP
+\fB\-\-setup\fP=[]
+    a git configuration command to configure git inside the git operator pod to deal with things like insecure docker registries etc. e.g. supply 'git config \-\-global http.sslverify false' to disable TLS verification
+
+.PP
 \fB\-\-token\fP=""
     specify the git token the operator will use to clone the environment git repository if there is no password in the git URL. If not specified defaults to $GIT\_TOKEN
 
@@ -79,70 +83,54 @@ Installs the git operator in a cluster
 .SH EXAMPLE
 .RS
 .IP \(bu 2
+
+.PP
 installs the git operator from inside a git clone and prompt for the user/token if required
-
-.br
-
-.RE
-
 .PP
 .RS
 
 .nf
-  jx\-admin operator
+jx\-admin operator
 
 .fi
 .RE
-
-.RS
 .IP \(bu 2
+
+.PP
 installs the git operator from inside a git clone specifying the user/token
-
-.br
-
-.RE
-
 .PP
 .RS
 
 .nf
-  jx\-admin operator \-\-username mygituser \-\-token mygittoken
+jx\-admin operator \-\-username mygituser \-\-token mygittoken
 
 .fi
 .RE
-
-.RS
 .IP \(bu 2
+
+.PP
 installs the git operator with the given git clone URL
-
-.br
-
-.RE
-
 .PP
 .RS
 
 .nf
-  jx\-admin operator \-\-url https://github.com/myorg/environment\-mycluster\-dev.git \-\-username myuser \-\-token myuser
+jx\-admin operator \-\-url https://github.com/myorg/environment\-mycluster\-dev.git \-\-username myuser \-\-token myuser
 
 .fi
 .RE
-
-.RS
 .IP \(bu 2
+
+.PP
 display what helm command will install the git operator
-
-.br
-
-.RE
-
 .PP
 .RS
 
 .nf
-  jx\-admin operator \-\-dry\-run
+jx\-admin operator \-\-dry\-run
 
 .fi
+.RE
+
 .RE
 
 
