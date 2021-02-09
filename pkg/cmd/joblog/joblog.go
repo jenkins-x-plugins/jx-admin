@@ -245,6 +245,7 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 		return errors.Wrapf(err, "failed to list pods in namespace %s with selector %s", ns, selector)
 	}
 
+	var answer error
 	for i := range podList.Items {
 		pod := &podList.Items[i]
 
@@ -278,12 +279,15 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), info("Succeeded"))
 			} else {
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), termcolor.ColorError(string(pod.Status.Phase)))
+				if answer == nil {
+					answer = errors.Errorf("boot Job pod %s has %s", podName, string(pod.Status.Phase))
+				}
 			}
 		} else if pod.DeletionTimestamp != nil {
 			logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorWarning("Terminating"))
 		}
 	}
-	return nil
+	return answer
 }
 
 // Validate verifies the settings are correct and we can lazy create any required resources
@@ -347,11 +351,14 @@ func (o *Options) waitForJobCompleteOrPodRunning(client kubernetes.Interface, ns
 	}
 
 	for {
-		complete, _, err := o.checkIfJobComplete(client, ns, jobName)
+		complete, job, err := o.checkIfJobComplete(client, ns, jobName)
 		if err != nil {
 			return false, nil, errors.Wrapf(err, "failed to check for Job %s complete", jobName)
 		}
 		if complete {
+			if job != nil && !jobs.IsJobSucceeded(job) {
+				return true, nil, errors.Errorf("job %s failed", jobName)
+			}
 			return true, nil, nil
 		}
 
