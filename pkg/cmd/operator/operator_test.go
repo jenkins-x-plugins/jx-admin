@@ -1,7 +1,7 @@
 package operator_test
 
 import (
-	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner/fakerunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/helmer"
 	"github.com/stretchr/testify/require"

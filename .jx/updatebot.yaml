@@ -6,7 +6,7 @@ spec:
         - https://github.com/jenkins-x/jx3-pipeline-catalog
       changes:
         - regex:
-            pattern: "ghcr.io/jenkins-x/jx-admin:(.*)"
+            pattern: "ghcr.io/jenkins-x-plugins/jx-admin:(.*)"
             files:
               - "**/*.yaml"
     - urls:
