@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx-admin/pkg/bootjobs"
-	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/bootjobs"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/input"

@@ -1,4 +1,4 @@
-module github.com/jenkins-x/jx-admin
+module github.com/jenkins-x-plugins/jx-admin
 
 require (
 	github.com/cpuguy83/go-md2man v1.0.10

@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx-admin/pkg/cmd/create"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/invitations"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/joblog"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/operator"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/plugins"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/trigger"
-	"github.com/jenkins-x/jx-admin/pkg/cmd/version"
-	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/create"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/invitations"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/joblog"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/operator"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/plugins"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/trigger"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/version"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/spf13/cobra"

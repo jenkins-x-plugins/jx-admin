@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/jenkins-x/jx-admin/pkg/common"
-	"github.com/jenkins-x/jx-admin/pkg/reqhelpers"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/reqhelpers"
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"

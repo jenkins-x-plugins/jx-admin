@@ -21,7 +21,7 @@ import (
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
 
-	"github.com/jenkins-x/jx-admin/pkg/rootcmd"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
