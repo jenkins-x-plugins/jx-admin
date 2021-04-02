@@ -88,7 +88,7 @@ func (o *Options) Run() error {
 	gitServerURL := fmt.Sprintf("%s://%s", botCredentials.Protocol, botCredentials.Host)
 	kind := giturl.SaasGitKind(gitServerURL)
 
-	o.client, _, err = scmhelpers.NewScmClient(kind, gitServerURL, botCredentials.Password)
+	o.client, _, err = scmhelpers.NewScmClient(kind, gitServerURL, botCredentials.Password, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create scm client")
 	}
