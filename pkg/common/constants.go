@@ -5,10 +5,10 @@ const (
 	DefaultOperatorNamespace = "jx-git-operator"
 
 	// DefaultBootRepository default git repo for boot with helm 3
-	DefaultBootRepository = "https://github.com/jenkins-x/jx3-boot-config.git"
+	DefaultBootRepository = "https://github.com/jx3-gitops-repositories/jx3-kubernetes.git"
 
 	// DefaultEnvironmentHelmfileGitRepoURL the default git repository used for remote environments with helmfile
-	DefaultEnvironmentHelmfileGitRepoURL = "https://github.com/jenkins-x/jxr-default-environment-helmfile.git"
+	DefaultEnvironmentHelmfileGitRepoURL = "https://github.com/jenkins-x/default-environment-helmfile.git"
 
 	// DefaultVersionsRef default version stream ref
 	DefaultVersionsRef = "master"
