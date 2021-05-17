@@ -64,6 +64,10 @@ Installs the git operator in a cluster
     to disable switching to the installation namespace after installing the operator
 
 .PP
+\fB\-\-set\fP=[]
+    one or more helm set arguments to pass through the git operator chart. Equivalent to running 'helm install \-\-set some.name=value'
+
+.PP
 \fB\-\-setup\fP=[]
     a git configuration command to configure git inside the git operator pod to deal with things like insecure docker registries etc. e.g. supply 'git config \-\-global http.sslverify false' to disable TLS verification
 
