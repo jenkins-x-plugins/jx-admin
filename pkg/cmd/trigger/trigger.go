@@ -39,13 +39,13 @@ var (
 	info = termcolor.ColorInfo
 
 	cmdLong = templates.LongDesc(`
-		Views the boot Job logs in the cluster
+		Triggers the latest boot Job to run again
 
 `)
 
 	cmdExample = templates.Examples(`
-* views the current boot logs
-` + bashExample("log") + `
+* trigger the boot job again
+` + bashExample("trigger") + `
 `)
 )
 
@@ -59,7 +59,7 @@ func NewCmdJobTrigger() (*cobra.Command, *Options) {
 	options := &Options{}
 	command := &cobra.Command{
 		Use:     "trigger",
-		Short:   "triggers the latest boot Job to rerun",
+		Short:   "triggers the latest boot Job to run again",
 		Aliases: []string{"rerun"},
 		Long:    cmdLong,
 		Example: cmdExample,
