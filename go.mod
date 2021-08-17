@@ -3,9 +3,9 @@ module github.com/jenkins-x-plugins/jx-admin
 require (
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/jenkins-x/go-scm v1.10.9
-	github.com/jenkins-x/jx-api/v4 v4.1.3
-	github.com/jenkins-x/jx-helpers/v3 v3.0.125
+	github.com/jenkins-x/go-scm v1.10.10
+	github.com/jenkins-x/jx-api/v4 v4.1.5
+	github.com/jenkins-x/jx-helpers/v3 v3.0.127
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.2
 	github.com/jenkins-x/jx-logging/v3 v3.0.6
 	github.com/onsi/gomega v1.8.1 // indirect
@@ -21,13 +21,9 @@ require (
 )
 
 replace (
-	// helm dependencies
-	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-
-	k8s.io/api => k8s.io/api v0.20.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.20.2
-	k8s.io/client-go => k8s.io/client-go v0.20.2
+	k8s.io/api => k8s.io/api v0.20.6
+	k8s.io/apimachinery => k8s.io/apimachinery v0.20.6
+	k8s.io/client-go => k8s.io/client-go v0.20.6
 )
 
 go 1.15
