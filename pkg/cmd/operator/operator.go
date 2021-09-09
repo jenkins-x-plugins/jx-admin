@@ -76,7 +76,7 @@ func bashExample(cli string) string {
 }
 
 const (
-	defaultChartName = "jx3/jx-git-operator"
+	defaultChartName = "jxgh/jx-git-operator"
 )
 
 // NewCmdRun creates the new command
@@ -167,7 +167,7 @@ func (o *Options) Run() error {
 		o.Helmer = helmplugin.NewHelmer(o.HelmBin, o.Dir)
 	}
 	h := o.Helmer
-	_, err = helmer.AddHelmRepoIfMissing(h, helmer.JX3ChartRepository, "jx3", "", "")
+	_, err = helmer.AddHelmRepoIfMissing(h, helmer.JX3ChartRepository, "jxgh", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add Jenkins X Labs chart repository")
 	}
