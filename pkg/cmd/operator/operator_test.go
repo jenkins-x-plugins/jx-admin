@@ -1,24 +1,33 @@
 package operator_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/operator"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner/fakerunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/helmer"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOperator(t *testing.T) {
 	testCases := []struct {
-		userName    string
-		expectError bool
+		description  string
+		userName     string
+		skipcreatens bool
+		expectError  bool
 	}{
 		{
-			userName: "fakegitusername",
+			userName:     "fakegitusername",
+			skipcreatens: false,
 		},
 		{
-			userName:    "myname@cheese.com",
-			expectError: true,
+			userName:     "myname@cheese.com",
+			expectError:  true,
+			skipcreatens: false,
+		},
+		{
+			userName:     "fakegitusernamenons",
+			skipcreatens: true,
 		},
 	}
 
@@ -33,6 +42,9 @@ func TestOperator(t *testing.T) {
 		o.GitURL = "https://github.com/jx3-gitops-repositories/jx3-kubernetes"
 		o.Helmer = helmer.NewFakeHelmer()
 		o.NoLog = true
+		if tc.skipcreatens {
+			o.SkipNamespaceCreation = true
+		}
 
 		err := o.Run()
 		if tc.expectError {

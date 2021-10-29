@@ -32,24 +32,25 @@ import (
 
 // Options contains the command line arguments for this command
 type Options struct {
-	Dir               string
-	GitURL            string
-	GitUserName       string
-	GitToken          string
-	Namespace         string
-	ReleaseName       string
-	ChartName         string
-	ChartVersion      string
-	HelmBin           string
-	GitSetupCommands  []string
-	HelmSetArgs       []string
-	DryRun            bool
-	NoSwitchNamespace bool
-	NoLog             bool
-	BatchMode         bool
-	JobLogOptions     joblog.Options
-	CommandRunner     cmdrunner.CommandRunner
-	Helmer            helmer.Helmer
+	Dir                   string
+	GitURL                string
+	GitUserName           string
+	GitToken              string
+	Namespace             string
+	ReleaseName           string
+	ChartName             string
+	ChartVersion          string
+	HelmBin               string
+	GitSetupCommands      []string
+	HelmSetArgs           []string
+	DryRun                bool
+	NoSwitchNamespace     bool
+	NoLog                 bool
+	BatchMode             bool
+	JobLogOptions         joblog.Options
+	CommandRunner         cmdrunner.CommandRunner
+	Helmer                helmer.Helmer
+	SkipNamespaceCreation bool
 }
 
 var (
@@ -126,6 +127,7 @@ func (o *Options) AddFlags(command *cobra.Command) {
 	command.Flags().StringVarP(&o.ChartName, "chart", "", defaultChartName, "the chart name to use to install the git operator")
 	command.Flags().StringVarP(&o.ChartVersion, "chart-version", "", "", "override the helm chart version used for the git operator")
 	command.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "if enabled just display the helm command that will run but don't actually do anything")
+	command.Flags().BoolVarP(&o.SkipNamespaceCreation, "skip-namespace-creation", "", false, "if enabled skip namespace creation")
 }
 
 // Run installs the git operator chart
@@ -169,7 +171,7 @@ func (o *Options) Run() error {
 	h := o.Helmer
 	_, err = helmer.AddHelmRepoIfMissing(h, helmer.JX3ChartRepository, "jxgh", "", "")
 	if err != nil {
-		return errors.Wrap(err, "failed to add Jenkins X Labs chart repository")
+		return errors.Wrap(err, "failed to add Jenkins X github chart repository")
 	}
 	log.Logger().Debugf("updating helm repositories")
 	err = h.UpdateRepo()
@@ -252,7 +254,12 @@ func (o *Options) getCommandLine(helmBin, gitURL string) *cmdrunner.Command {
 	if o.Namespace != "" {
 		args = append(args, "--namespace", o.Namespace)
 	}
-	args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
+
+	if o.SkipNamespaceCreation {
+		args = append(args, o.ReleaseName, o.ChartName)
+	} else {
+		args = append(args, "--create-namespace", o.ReleaseName, o.ChartName)
+	}
 
 	return &cmdrunner.Command{
 		Name: helmBin,
@@ -320,9 +327,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			if err != nil {
 				return answer, errors.Wrap(err, "failed to get git username")
 			}
-		} else {
 		}
-
 	}
 	if o.GitUserName == "" {
 		return answer, options.MissingOption("username")
