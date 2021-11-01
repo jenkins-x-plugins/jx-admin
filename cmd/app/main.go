@@ -1,10 +1,9 @@
+//nolint:gofmt,goimports
 // +build !windows
 
 package app
 
-import (
-	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd"
-)
+import "github.com/jenkins-x-plugins/jx-admin/pkg/cmd"
 
 // Run runs the command, if args are not nil they will be set on the command
 func Run(args []string) error {

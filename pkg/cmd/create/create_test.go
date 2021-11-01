@@ -103,9 +103,9 @@ func TestCreate(t *testing.T) {
 		outFile, err := ioutil.TempFile("", "")
 		require.NoError(t, err, "failed to create tempo file")
 		outFileName := outFile.Name()
-		args := append(tc.Args, "--git-server", "https://fake.com", "--git-kind", "fake", "--env-git-owner", "jstrachan", "--cluster", tc.Name, "--out", outFileName)
-		args = append(args, tc.Args...)
-		co.Args = args
+		tc.Args = append(tc.Args, "--git-server", "https://fake.com", "--git-kind", "fake", "--env-git-owner", "jstrachan", "--cluster", tc.Name, "--out", outFileName)
+
+		co.Args = tc.Args
 		co.Environment = tc.Environment
 		if co.Environment == "" {
 			co.Environment = "dev"
