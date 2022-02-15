@@ -46,10 +46,7 @@ func GetSortedJobs(client kubernetes.Interface, ns string, selector string, comm
 
 // FindGitOperatorNamespace finds the git operator namespace
 func FindGitOperatorNamespace(client kubernetes.Interface, namespace string) (string, error) {
-	namespaces := []string{"jx", "jx-git-operator"}
-	if stringhelpers.StringArrayIndex(namespaces, namespace) < 0 {
-		namespaces = append(namespaces, namespace)
-	}
+	namespaces := selectOperatorNamespace(namespace)
 	name := "jx-git-operator"
 	for _, ns := range namespaces {
 		_, err := client.AppsV1().Deployments(ns).Get(context.TODO(), name, metav1.GetOptions{})
@@ -61,4 +58,12 @@ func FindGitOperatorNamespace(client kubernetes.Interface, namespace string) (st
 		}
 	}
 	return namespace, errors.Errorf("failed to find Deployment %s in namespaces %s", name, strings.Join(namespaces, ", "))
+}
+
+func selectOperatorNamespace(namespace string) []string {
+	namespaces := []string{"jx", "jx-git-operator"}
+	if stringhelpers.StringArrayIndex(namespaces, namespace) < 0 && len(namespace) > 0 {
+		namespaces = append([]string{namespace}, namespaces...)
+	}
+	return namespaces
 }
