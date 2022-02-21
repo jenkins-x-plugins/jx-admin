@@ -2,18 +2,19 @@ package bootjobs
 
 import (
 	"context"
+	"sort"
+	"strings"
+
 	"github.com/jenkins-x/jx-helpers/v3/pkg/stringhelpers"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sort"
-	"strings"
 )
 
 // GetSortedJobs gets the boot jobs with an optional commit sha filter
-func GetSortedJobs(client kubernetes.Interface, ns string, selector string, commitSHA string) ([]batchv1.Job, error) {
+func GetSortedJobs(client kubernetes.Interface, ns, selector, commitSHA string) ([]batchv1.Job, error) {
 	jobList, err := client.BatchV1().Jobs(ns).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: selector,
 	})
@@ -24,7 +25,8 @@ func GetSortedJobs(client kubernetes.Interface, ns string, selector string, comm
 	answer := jobList.Items
 	if commitSHA != "" {
 		var filtered []batchv1.Job
-		for _, job := range answer {
+		for k := range answer {
+			job := answer[k]
 			labels := job.Labels
 			if labels != nil {
 				sha := labels[LabelCommitSHA]

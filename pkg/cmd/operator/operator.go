@@ -380,7 +380,7 @@ func (o *Options) switchNamespace(ns string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to update the kube config to namepace %s", ns)
 	}
-	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", termcolor.ColorInfo(ns))
+	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/v3/develop/create-project/", termcolor.ColorInfo(ns))
 	return nil
 }
 

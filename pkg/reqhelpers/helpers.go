@@ -200,8 +200,8 @@ func applyDefaults(cmd *cobra.Command, r *jxcore.RequirementsConfig, flags *Requ
 	}
 
 	gitKind := r.Cluster.GitKind
-	gitKinds := append(giturl.KindGits, "fake")
-	if gitKind != "" && stringhelpers.StringArrayIndex(gitKinds, gitKind) < 0 {
+	giturl.KindGits = append(giturl.KindGits, "fake")
+	if gitKind != "" && stringhelpers.StringArrayIndex(giturl.KindGits, gitKind) < 0 {
 		return nil, options.InvalidOption("git-kind", gitKind, giturl.KindGits)
 	}
 
