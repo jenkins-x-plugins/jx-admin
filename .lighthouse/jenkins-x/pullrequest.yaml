@@ -13,24 +13,17 @@ spec:
         stepTemplate:
           image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin-multiarch/pullrequest.yaml@versionStream
           name: ""
-          resources:
-            requests:
-              cpu: 400m
-              memory: 600Mi
+          resources: {}
           workingDir: /workspace/source
         steps:
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone-pr.yaml@versionStream
           name: ""
           resources: {}
         - name: jx-variables
-          resources: {}
         - name: build-make-linux
-          resources: {}
         - name: build-make-test
-          resources: {}
         - name: build-container-build
-          resources: {}
   podTemplate: {}
   serviceAccountName: tekton-bot
-  timeout: 240h0m0s
+  timeout: 1h
 status: {}
