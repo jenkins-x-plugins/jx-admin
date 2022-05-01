@@ -60,7 +60,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rawlingsj/jsonschema v0.0.0-20210511142122-a9c2cfdb7dcf // indirect
@@ -97,6 +97,7 @@ require (
 )
 
 replace (
+	github.com/json-iterator/go => github.com/json-iterator/go v1.1.12
 	k8s.io/api => k8s.io/api v0.21.5
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.5
 	k8s.io/client-go => k8s.io/client-go v0.21.5
