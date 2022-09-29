@@ -101,7 +101,7 @@ func (o *Options) Run() error {
 
 	// next find any organisation level invitations
 	log.Logger().Infof("checking both repository and organization invitations for bot user %s", botCredentials.Username)
-	memberships, _, err := o.client.Organizations.ListMemberships(o.ctx, scm.ListOptions{})
+	memberships, _, err := o.client.Organizations.ListMemberships(o.ctx, &scm.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list team memberships")
 	}
