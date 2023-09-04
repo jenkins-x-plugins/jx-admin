@@ -40,7 +40,7 @@ jobs:
         REPOSITORY: ${{ github.repository }}
         VERSION: ${{ steps.prep.outputs.version }}
       name: changelog
-      uses: docker://ghcr.io/jenkins-x/jx-changelog:0.9.2
+      uses: docker://ghcr.io/jenkins-x/jx-boot:latest
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
