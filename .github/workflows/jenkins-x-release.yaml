@@ -83,7 +83,7 @@ jobs:
       uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.4.15
       with:
         entrypoint: jx-updatebot
-        args: pr --git-credentials
+        args: pr --git-credentials --add-changelog changelog.md
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         GIT_USERNAME: jenkins-x-bot-test
@@ -94,7 +94,6 @@ jobs:
       uses: docker://ghcr.io/oras-project/oras:v0.13.0
       with:
         entrypoint: .github/workflows/jenkins-x/sbom-container.sh
-        args: pr --add-changelog changelog.md
 
 "on":
   push:
