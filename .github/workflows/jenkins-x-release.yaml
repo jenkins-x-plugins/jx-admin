@@ -13,7 +13,7 @@ jobs:
 
     - name: prep
       id: prep
-      uses: docker://ghcr.io/jenkins-x/jx-release-version:2.7.0
+      uses: jenkins-x-plugins/jx-release-version@v2.7.0
       with:
         tag: true
         github-token: ${{ secrets.GIT_BOT_TOKEN }}
@@ -26,15 +26,6 @@ jobs:
       with:
         args: -c "make release"
         entrypoint: bash
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        VERSION: ${{ steps.prep.outputs.version }}
-      name: chart-docs
-      uses: docker://jnorwood/helm-docs:v1.4.0
-      with:
-        args: -c "if [ -d \"charts/$REPO_NAME\" ]; then cd charts/$REPO_NAME; helm-docs;
-          else echo no charts; fi"
-        entrypoint: /bin/ash
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
