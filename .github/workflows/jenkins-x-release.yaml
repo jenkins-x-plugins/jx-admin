@@ -94,6 +94,7 @@ jobs:
       uses: docker://ghcr.io/oras-project/oras:v0.13.0
       with:
         entrypoint: .github/workflows/jenkins-x/sbom-container.sh
+        args: pr --add-changelog changelog.md
 
 "on":
   push:
