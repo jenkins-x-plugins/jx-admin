@@ -246,8 +246,13 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 	}
 
 	var answer error
-	for i := range podList.Items {
-		pod := &podList.Items[i]
+	pos := podList.Items
+	// Sort pods in creation time order
+	sort.Slice(pos, func(i, j int) bool {
+		return pos[i].CreationTimestamp.Before(&pos[j].CreationTimestamp)
+	})
+	for i := range pos {
+		pod := &pos[i]
 
 		// lets verify the container name
 		err = verifyContainerName(pod, containerName)
@@ -264,7 +269,7 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector st
 			return errors.Wrapf(err, "failed to wait for pod %s to be running", pod.Name)
 		}
 		podName := pod.Name
-		logger.Logger().Infof("\ntailing boot Job pod %s\n\n", info(podName))
+		logger.Logger().Infof("\ntailing boot Job pod %s created %s\n\n", info(podName), info(pod.CreationTimestamp))
 
 		err = podlogs.TailLogs(ns, podName, containerName, o.ErrOut, o.Out)
 		if err != nil {
