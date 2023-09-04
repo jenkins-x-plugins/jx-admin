@@ -481,6 +481,10 @@ func JobStatus(j *batchv1.Job) string {
 	if j.Status.Active > 0 {
 		return "Running"
 	}
+	if j.Spec.Suspend != nil && *j.Spec.Suspend == true {
+		return "Suspended"
+	}
+
 	return "Pending"
 }
 

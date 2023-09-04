@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/operator"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/plugins"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/stop"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/trigger"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/version"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
@@ -30,6 +31,7 @@ func Main() *cobra.Command {
 	cmd.AddCommand(cobras.SplitCommand(invitations.NewCmdInvitations()))
 	cmd.AddCommand(cobras.SplitCommand(joblog.NewCmdJobLog()))
 	cmd.AddCommand(cobras.SplitCommand(operator.NewCmdOperator()))
+	cmd.AddCommand(cobras.SplitCommand(stop.NewCmdJobStop()))
 	cmd.AddCommand(cobras.SplitCommand(trigger.NewCmdJobTrigger()))
 	cmd.AddCommand(cobras.SplitCommand(version.NewCmdVersion()))
 	cmd.AddCommand(plugins.NewCmdPlugins())
