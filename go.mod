@@ -6,7 +6,7 @@ require (
 	github.com/jenkins-x/jx-api/v4 v4.6.3
 	github.com/jenkins-x/jx-helpers/v3 v3.4.12
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.7
-	github.com/jenkins-x/jx-logging/v3 v3.0.12
+	github.com/jenkins-x/jx-logging/v3 v3.0.15
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.0
 	github.com/spf13/pflag v1.0.5
@@ -34,7 +34,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
-	github.com/fatih/color v1.9.0 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
@@ -52,8 +52,8 @@ require (
 	github.com/jenkins-x/logrus-stackdriver-formatter v0.2.6 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -75,7 +75,7 @@ require (
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
-	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
