@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -200,11 +199,6 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to override requirements in dir %s", dir)
 	}
 
-	err = o.EnvFactory.VerifyPreInstall(o.DisableVerifyPackages, dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to verify requirements in dir %s", dir)
-	}
-
 	log.Logger().Infof("created git source at %s", termcolor.ColorInfo(dir))
 
 	_, err = gitclient.AddAndCommitFiles(o.Gitter, dir, "fix: initial code")
@@ -260,7 +254,7 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 			return "", errors.Wrapf(err, "failed to create directory %s", dir)
 		}
 	} else {
-		dir, err = ioutil.TempDir("", "helmboot-")
+		dir, err = os.MkdirTemp("", "helmboot-")
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create temporary directory")
 		}

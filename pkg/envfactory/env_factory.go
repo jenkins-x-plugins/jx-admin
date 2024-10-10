@@ -3,7 +3,7 @@ package envfactory
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
@@ -97,12 +97,12 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 	if err != nil {
 		return errors.Wrap(err, "failed to push to the git repository")
 	}
-	err = o.PrintBootJobInstructions(requirements, repo.Link)
+	err = o.PrintBootJobInstructions(repo.Link)
 	if err != nil {
 		return err
 	}
 	if o.GitURLOutFile != "" {
-		err = ioutil.WriteFile(o.GitURLOutFile, []byte(repo.Link), files.DefaultFileWritePermissions)
+		err = os.WriteFile(o.GitURLOutFile, []byte(repo.Link), files.DefaultFileWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save Git URL to file %s", o.GitURLOutFile)
 		}
@@ -129,23 +129,8 @@ func (o *EnvFactory) CreateScmClient(gitServer, _, gitKind string) (*scm.Client,
 	return scmClient, o.ScmClientFactory.GitToken, nil
 }
 
-// VerifyPreInstall verify the pre install of boot
-func (o *EnvFactory) VerifyPreInstall(disableVerifyPackages bool, dir string) error {
-	/*
-		vo := verify.StepVerifyPreInstallOptions{}
-		vo.CommonOptions = o.JXAdapter().NewCommonOptions()
-		vo.Dir = dir
-		vo.DisableVerifyPackages = disableVerifyPackages
-		vo.NoSecretYAMLValidate = true
-		return vo.Run()        mb
-	*/
-
-	// TODO invoke the jx CLI?
-	return nil
-}
-
 // PrintBootJobInstructions prints the instructions to run the installer
-func (o *EnvFactory) PrintBootJobInstructions(requirements *jxcore.RequirementsConfig, link string) error {
+func (o *EnvFactory) PrintBootJobInstructions(link string) error {
 	gitInfo, err := giturl.ParseGitURL(link)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s", link)

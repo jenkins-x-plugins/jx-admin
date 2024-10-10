@@ -1,7 +1,7 @@
 package reqhelpers
 
 import (
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -25,8 +25,7 @@ var KubernetesProviders = []string{GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPE
 
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {
-	values := []string{}
-	values = append(values, KubernetesProviders...)
-	sort.Strings(values)
+	values := append([]string{}, KubernetesProviders...)
+	slices.Sort(values)
 	return strings.Join(values, ", ")
 }

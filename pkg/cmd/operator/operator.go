@@ -267,7 +267,7 @@ func (o *Options) getCommandLine(helmBin, gitURL string) *cmdrunner.Command {
 	}
 }
 
-//nolint
+// nolint
 func (o *Options) findChartVersion(_ *jxcore.RequirementsConfig) (string, error) {
 	/*
 		if o.ChartName == "" || o.ChartName[0] == '.' || o.ChartName[0] == '/' || o.ChartName[0] == '\\' || strings.Count(o.ChartName, "/") > 1 {

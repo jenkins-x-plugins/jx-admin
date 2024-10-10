@@ -24,7 +24,7 @@ Installs the git operator in a cluster
     Runs in batch mode without prompting for user input
 
 .PP
-\fB\-\-chart\fP="jx3/jx\-git\-operator"
+\fB\-\-chart\fP="jxgh/jx\-git\-operator"
     the chart name to use to install the git operator
 
 .PP
@@ -70,6 +70,10 @@ Installs the git operator in a cluster
 .PP
 \fB\-\-setup\fP=[]
     a git configuration command to configure git inside the git operator pod to deal with things like insecure docker registries etc. e.g. supply 'git config \-\-global http.sslverify false' to disable TLS verification
+
+.PP
+\fB\-\-skip\-namespace\-creation\fP[=false]
+    if enabled skip namespace creation
 
 .PP
 \fB\-\-token\fP=""
