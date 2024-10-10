@@ -2,7 +2,7 @@ package upgrader
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -39,7 +39,7 @@ func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceReposito
 		}
 
 		fileName := filepath.Join(outDir, sr.Name+".yaml")
-		err = ioutil.WriteFile(fileName, data, files.DefaultFileWritePermissions)
+		err = os.WriteFile(fileName, data, files.DefaultFileWritePermissions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to write file %s for SourceRepository %s to YAML", fileName, sr.Name)
 		}

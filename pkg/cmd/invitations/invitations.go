@@ -105,7 +105,7 @@ func (o *Options) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to list team memberships")
 	}
-	orgInvites := []*scm.Membership{}
+	var orgInvites []*scm.Membership
 	for _, m := range memberships {
 		if m.State == "pending" {
 			orgInvites = append(orgInvites, m)

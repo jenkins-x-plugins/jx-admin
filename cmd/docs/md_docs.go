@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,21 +63,21 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	buf.WriteString(short + "\n\n")
 
 	if len(cmd.Aliases) > 0 {
-		buf.WriteString(fmt.Sprintf("***Aliases**: %s*\n\n", strings.Join(cmd.Aliases, ",")))
+		fmt.Fprintf(buf, "***Aliases**: %s*\n\n", strings.Join(cmd.Aliases, ","))
 	}
 
 	if cmd.Runnable() {
 		buf.WriteString("### Usage\n\n")
-		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.UseLine()))
+		fmt.Fprintf(buf, "```\n%s\n```\n\n", cmd.UseLine())
 	}
 
 	buf.WriteString("### Synopsis\n\n")
 
 	buf.WriteString(long + "\n\n")
 
-	if len(cmd.Example) > 0 {
+	if cmd.Example != "" {
 		buf.WriteString("### Examples\n\n")
-		buf.WriteString(fmt.Sprintf("%s\n\n", cmd.Example))
+		fmt.Fprintf(buf, "%s\n\n", cmd.Example)
 	}
 
 	if err := printOptions(buf, cmd); err != nil {
@@ -90,7 +90,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			pname := parent.CommandPath()
 			link := pname + ".md"
 			link = strings.Replace(link, " ", "_", -1)
-			buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short))
+			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short)
 			cmd.VisitParents(func(c *cobra.Command) {
 				if c.DisableAutoGenTag {
 					cmd.DisableAutoGenTag = c.DisableAutoGenTag
@@ -108,7 +108,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			cname := name + " " + child.Name()
 			link := cname + ".md"
 			link = strings.Replace(link, " ", "_", -1)
-			buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", cname, linkHandler(link), child.Short))
+			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", cname, linkHandler(link), child.Short)
 		}
 		buf.WriteString("\n")
 	}
@@ -151,7 +151,7 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	}
 	defer f.Close()
 
-	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
+	if _, err := f.WriteString(filePrepender(filename)); err != nil {
 		return err
 	}
 	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {

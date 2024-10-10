@@ -173,7 +173,7 @@ See: https://jenkins-x.io/docs/v3/guides/operator/
 	return nil
 }
 
-func (o *Options) waitForActiveJob(client kubernetes.Interface, ns string, selector string, info func(a ...interface{}) string, containerName string) error {
+func (o *Options) waitForActiveJob(client kubernetes.Interface, ns, selector string, info func(a ...interface{}) string, containerName string) error {
 	job, err := o.waitForLatestJob(client, ns, selector)
 	if err != nil {
 		return errors.Wrapf(err, "failed to wait for active Job in namespace %s with selector %v", ns, selector)
@@ -184,7 +184,7 @@ func (o *Options) waitForActiveJob(client kubernetes.Interface, ns string, selec
 	return o.viewActiveJobLog(client, ns, selector, containerName, job)
 }
 
-func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns string, selector string, containerName string, job *batchv1.Job) error {
+func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns, selector, containerName string, job *batchv1.Job) error {
 	var foundPods []string
 	for {
 		complete, pod, err := o.waitForJobCompleteOrPodRunning(client, ns, selector, job.Name)
@@ -233,7 +233,7 @@ func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns string, selec
 	}
 }
 
-func (o *Options) viewJobLog(client kubernetes.Interface, ns string, selector string, containerName string, job *batchv1.Job) error {
+func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containerName string, job *batchv1.Job) error {
 	opts := metav1.ListOptions{
 		LabelSelector: "job-name=" + job.Name,
 	}
@@ -441,7 +441,7 @@ func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name strin
 	return false, job, nil
 }
 
-func (o *Options) pickJobToLog(client kubernetes.Interface, ns string, selector string, jobs []batchv1.Job) error {
+func (o *Options) pickJobToLog(client kubernetes.Interface, ns, selector string, jobs []batchv1.Job) error {
 	var names []string
 	m := map[string]*batchv1.Job{}
 	for i := range jobs {
@@ -467,7 +467,7 @@ func (o *Options) pickJobToLog(client kubernetes.Interface, ns string, selector 
 
 func toJobName(j *batchv1.Job, number int) string {
 	status := JobStatus(j)
-	d := time.Now().Sub(j.CreationTimestamp.Time).Round(time.Minute)
+	d := time.Since(j.CreationTimestamp.Time).Round(time.Minute)
 	return fmt.Sprintf("#%d started %s %s", number, d.String(), status)
 }
 
@@ -481,7 +481,7 @@ func JobStatus(j *batchv1.Job) string {
 	if j.Status.Active > 0 {
 		return "Running"
 	}
-	if j.Spec.Suspend != nil && *j.Spec.Suspend == true {
+	if j.Spec.Suspend != nil && *j.Spec.Suspend {
 		return "Suspended"
 	}
 

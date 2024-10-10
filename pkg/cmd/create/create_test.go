@@ -3,7 +3,7 @@ package create_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -100,7 +100,7 @@ func TestCreate(t *testing.T) {
 		}
 		co.Gitter = cli.NewCLIClient("", runner.Run)
 		co.DisableVerifyPackages = true
-		outFile, err := ioutil.TempFile("", "")
+		outFile, err := os.CreateTemp("", "")
 		require.NoError(t, err, "failed to create tempo file")
 		outFileName := outFile.Name()
 		args := append(tc.Args, "--git-server", "https://fake.com", "--git-kind", "fake", "--env-git-owner", "jstrachan", "--cluster", tc.Name, "--out", outFileName)
@@ -134,7 +134,7 @@ func TestCreate(t *testing.T) {
 		t.Logf("test %s created dir %s\n", tc.Name, co.OutDir)
 
 		assert.FileExists(t, outFileName, "did not generate the Git URL file")
-		data, err := ioutil.ReadFile(outFileName)
+		data, err := os.ReadFile(outFileName)
 		require.NoError(t, err, "failed to load file %s", outFileName)
 		text := strings.TrimSpace(string(data))
 		expectedGitURL := fmt.Sprintf("https://fake.com/jstrachan/environment-%s-%s.git", tc.Name, co.Environment)
