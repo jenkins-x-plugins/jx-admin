@@ -7,14 +7,13 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jobs"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/options"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -40,23 +39,23 @@ var (
 
 // NewCmdJobStep creates the new command
 func NewCmdJobStop() (*cobra.Command, *Options) {
-	options := &Options{}
+	o := &Options{}
 	command := &cobra.Command{
 		Use:     "stop",
 		Short:   "stops the currently running boot Job",
 		Aliases: []string{"suspend"},
 		Long:    cmdLong,
 		Run: func(command *cobra.Command, args []string) {
-			err := options.Run()
+			err := o.Run()
 			helper.CheckErr(err)
 		},
 	}
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
-	command.Flags().StringVarP(&options.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
+	command.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
+	command.Flags().StringVarP(&o.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
 
-	options.BaseOptions.AddBaseFlags(command)
+	o.BaseOptions.AddBaseFlags(command)
 
-	return command, options
+	return command, o
 }
 
 func (o *Options) Run() error {
@@ -74,19 +73,19 @@ func (o *Options) Run() error {
 		return nil
 	}
 
-	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, "")
+	sortedJobs, err := bootjobs.GetSortedJobs(client, ns, selector, "")
 	if err != nil {
 		log.Logger().WithError(err).Errorf("failed to get jobs")
 		return nil
 	}
 
-	if len(jobs) == 0 {
+	if len(sortedJobs) == 0 {
 		log.Logger().Warnf("there are no boot jobs found in namespace %s", ns)
 		return nil
 	}
 
-	job := jobs[0]
-	if IsJobDone(&job) {
+	job := sortedJobs[0]
+	if jobs.IsJobFinished(&job) {
 		log.Logger().Warnf("there is no running boot job in namespace %s", ns)
 		return nil
 	}
@@ -115,14 +114,4 @@ func (o *Options) Validate() error {
 		}
 	}
 	return nil
-}
-
-// IsJobDone returns true if the job has completed
-func IsJobDone(r *batchv1.Job) bool {
-	for _, con := range r.Status.Conditions {
-		if con.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-	return false
 }

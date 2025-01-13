@@ -77,7 +77,7 @@ func bashExample(cli string) string {
 
 // NewCmdJobLog creates the new command
 func NewCmdJobLog() (*cobra.Command, *Options) {
-	options := &Options{}
+	o := &Options{}
 	command := &cobra.Command{
 		Use:     "log",
 		Short:   "views the boot Job logs in the cluster",
@@ -85,23 +85,23 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(command *cobra.Command, args []string) {
-			err := options.Run()
+			err := o.Run()
 			helper.CheckErr(err)
 		},
 	}
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
-	command.Flags().StringVarP(&options.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
-	command.Flags().StringVarP(&options.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
-	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
-	command.Flags().StringVarP(&options.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
-	command.Flags().BoolVarP(&options.WaitMode, "wait", "w", false, "wait for the next active Job to start")
-	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
-	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
-	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
+	command.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
+	command.Flags().StringVarP(&o.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
+	command.Flags().StringVarP(&o.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
+	command.Flags().StringVarP(&o.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
+	command.Flags().StringVarP(&o.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
+	command.Flags().BoolVarP(&o.WaitMode, "wait", "w", false, "wait for the next active Job to start")
+	command.Flags().BoolVarP(&o.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
+	command.Flags().DurationVarP(&o.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
+	command.Flags().DurationVarP(&o.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
 
-	options.BaseOptions.AddBaseFlags(command)
+	o.BaseOptions.AddBaseFlags(command)
 
-	return command, options
+	return command, o
 }
 
 func (o *Options) Run() error {
@@ -119,16 +119,16 @@ func (o *Options) Run() error {
 		return errors.Wrapf(err, "failed to find the git operator namespace")
 	}
 
-	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
+	sortedJobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get jobs")
 	}
 
-	if !o.WaitMode && len(jobs) <= 1 {
-		if len(jobs) == 0 {
+	if !o.WaitMode && len(sortedJobs) <= 1 {
+		if len(sortedJobs) == 0 {
 			o.WaitMode = true
 		} else {
-			j := jobs[0]
+			j := sortedJobs[0]
 			if j.Status.Active > 0 {
 				o.WaitMode = true
 			}
@@ -141,7 +141,7 @@ func (o *Options) Run() error {
 		}
 		return o.waitForActiveJob(client, ns, selector, info, containerName)
 	}
-	return o.pickJobToLog(client, ns, selector, jobs)
+	return o.pickJobToLog(client, ns, selector, sortedJobs)
 }
 
 func (o *Options) waitForGitOperator(client kubernetes.Interface, ns, selector string) error {
@@ -245,7 +245,6 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 		return errors.Wrapf(err, "failed to list pods in namespace %s with selector %s", ns, selector)
 	}
 
-	var answer error
 	pos := podList.Items
 	// Sort pods in creation time order
 	sort.Slice(pos, func(i, j int) bool {
@@ -284,15 +283,25 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), info("Succeeded"))
 			} else {
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), termcolor.ColorError(string(pod.Status.Phase)))
-				if answer == nil {
-					answer = errors.Errorf("boot Job pod %s has %s", podName, string(pod.Status.Phase))
-				}
 			}
 		} else if pod.DeletionTimestamp != nil {
 			logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorWarning("Terminating"))
 		}
 	}
-	return answer
+	// If job is active return error if latest pod has failed
+	if !jobs.IsJobFinished(job) && len(pos) > 0 {
+		pod := &pos[len(pos)-1]
+		if !pods.IsPodSucceeded(pod) {
+			return fmt.Errorf("boot Job pod %s has %s", pod.Name, string(pod.Status.Phase))
+		}
+	} else if !jobs.IsJobSucceeded(job) {
+		if len(job.Status.Conditions) > 0 {
+			// If job is finished return error if job has failed
+			return errors.New(job.Status.Conditions[0].Message)
+		}
+	}
+
+	return nil
 }
 
 // Validate verifies the settings are correct and we can lazy create any required resources
