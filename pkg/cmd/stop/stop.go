@@ -2,6 +2,7 @@ package stop
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jenkins-x-plugins/jx-admin/pkg/bootjobs"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
@@ -12,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -94,7 +95,7 @@ func (o *Options) Run() error {
 	job.Spec.Suspend = &suspend
 	_, err = client.BatchV1().Jobs(ns).Update(ctx, &job, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "failed to update Job %s in namespace %s", job.Name, job.Namespace)
+		return fmt.Errorf("failed to update Job %s in namespace %s: %w", job.Name, job.Namespace, err)
 	}
 	log.Logger().Infof("marked Job %s to be stopped.", info(job.Name))
 	return nil
@@ -105,12 +106,12 @@ func (o *Options) Validate() error {
 	var err error
 	o.KubeClient, err = kube.LazyCreateKubeClientWithMandatory(o.KubeClient, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 	if o.Namespace == "" {
 		o.Namespace, err = kubeclient.CurrentNamespace()
 		if err != nil {
-			return errors.Wrapf(err, "failed to detect current namespace. Try supply --namespace")
+			return fmt.Errorf("failed to detect current namespace. Try supply --namespace: %w", err)
 		}
 	}
 	return nil

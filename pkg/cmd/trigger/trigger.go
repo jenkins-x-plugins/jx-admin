@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	logger "github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -88,12 +88,12 @@ func (o *Options) Run() error {
 
 	ns, err := bootjobs.FindGitOperatorNamespace(client, o.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find the git operator namespace")
+		return fmt.Errorf("failed to find the git operator namespace: %w", err)
 	}
 
 	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get jobs")
+		return fmt.Errorf("failed to get jobs: %w", err)
 	}
 
 	if len(jobs) == 0 {
@@ -105,7 +105,7 @@ func (o *Options) Run() error {
 	ctx := context.Background()
 	_, err = client.BatchV1().Jobs(ns).Update(ctx, &job, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "failed to update Job %s in namespace %s", job.Name, job.Namespace)
+		return fmt.Errorf("failed to update Job %s in namespace %s: %w", job.Name, job.Namespace, err)
 	}
 	log.Logger().Infof("marked Job %s to be rerun. You can view the logs via: %s", info(job.Name), info("jx admin log"))
 	return nil
@@ -116,12 +116,12 @@ func (o *Options) Validate() error {
 	var err error
 	o.KubeClient, err = kube.LazyCreateKubeClientWithMandatory(o.KubeClient, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 	if o.Namespace == "" {
 		o.Namespace, err = kubeclient.CurrentNamespace()
 		if err != nil {
-			return errors.Wrapf(err, "failed to detect current namespace. Try supply --namespace")
+			return fmt.Errorf("failed to detect current namespace. Try supply --namespace: %w", err)
 		}
 	}
 	return nil

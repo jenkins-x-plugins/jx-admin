@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 )
@@ -55,7 +55,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 	o.OutDir = dir
 	requirementsResource, fileName, err := jxcore.LoadRequirementsConfig(dir, false)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load requirements from %s", dir)
+		return fmt.Errorf("failed to load requirements from %s: %w", dir, err)
 	}
 	requirements := &requirementsResource.Spec
 	dev := reqhelpers.GetDevEnvironmentConfig(requirements)
@@ -84,7 +84,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 
 	scmClient, _, err := o.CreateScmClient(cr.GitServer, cr.Owner, cr.GitKind)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create SCM client for server %s", cr.GitServer)
+		return fmt.Errorf("failed to create SCM client for server %s: %w", cr.GitServer, err)
 	}
 	o.ScmClient = scmClient
 
@@ -95,7 +95,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 	o.CreatedScmRepository = repo
 	err = o.PushToGit(repo.Clone, dir)
 	if err != nil {
-		return errors.Wrap(err, "failed to push to the git repository")
+		return fmt.Errorf("failed to push to the git repository: %w", err)
 	}
 	err = o.PrintBootJobInstructions(repo.Link)
 	if err != nil {
@@ -104,7 +104,7 @@ func (o *EnvFactory) CreateDevEnvGitRepository(dir string, gitPublic bool) error
 	if o.GitURLOutFile != "" {
 		err = os.WriteFile(o.GitURLOutFile, []byte(repo.Link), files.DefaultFileWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "failed to save Git URL to file %s", o.GitURLOutFile)
+			return fmt.Errorf("failed to save Git URL to file %s: %w", o.GitURLOutFile, err)
 		}
 	}
 	return nil
@@ -124,7 +124,7 @@ func (o *EnvFactory) CreateScmClient(gitServer, _, gitKind string) (*scm.Client,
 	o.ScmClientFactory.GitKind = gitKind
 	scmClient, err := o.ScmClientFactory.Create()
 	if err != nil {
-		return scmClient, "", errors.Wrapf(err, "failed to create SCM client for server %s", gitServer)
+		return scmClient, "", fmt.Errorf("failed to create SCM client for server %s: %w", gitServer, err)
 	}
 	return scmClient, o.ScmClientFactory.GitToken, nil
 }
@@ -133,7 +133,7 @@ func (o *EnvFactory) CreateScmClient(gitServer, _, gitKind string) (*scm.Client,
 func (o *EnvFactory) PrintBootJobInstructions(link string) error {
 	gitInfo, err := giturl.ParseGitURL(link)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse git URL %s", link)
+		return fmt.Errorf("failed to parse git URL %s: %w", link, err)
 	}
 
 	info := termcolor.ColorInfo
@@ -150,13 +150,13 @@ func (o *EnvFactory) PrintBootJobInstructions(link string) error {
 func (o *EnvFactory) PushToGit(cloneURL, dir string) error {
 	forkPushURL, err := o.ScmClientFactory.CreateAuthenticatedURL(cloneURL)
 	if err != nil {
-		return errors.Wrapf(err, "creating push URL for %s", cloneURL)
+		return fmt.Errorf("creating push URL for %s: %w", cloneURL, err)
 	}
 
 	remoteBranch := "master"
 	_, err = o.Gitter.Command(dir, "push", forkPushURL, "--force", fmt.Sprintf("%s:%s", "HEAD", remoteBranch))
 	if err != nil {
-		return errors.Wrapf(err, "pushing merged branch %s", remoteBranch)
+		return fmt.Errorf("pushing merged branch %s: %w", remoteBranch, err)
 	}
 
 	log.Logger().Infof("pushed code to the repository")
@@ -173,7 +173,7 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 	gitter := o.Gitter
 	changes, err := gitclient.HasChanges(gitter, dir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to detect if there were git changes in dir %s", dir)
+		return fmt.Errorf("failed to detect if there were git changes in dir %s: %w", dir, err)
 	}
 	if !changes {
 		log.Logger().Infof("no changes detected so not creating a Pull Request on %s", termcolor.ColorInfo(gitURL))
@@ -183,25 +183,25 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 	if branchName == "" {
 		branchName, err = gitclient.CreateBranch(gitter, dir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create git branch in %s", dir)
+			return fmt.Errorf("failed to create git branch in %s: %w", dir, err)
 		}
 	}
 
 	commitMessage := fmt.Sprintf("%s\n\n%s", commitTitle, commitBody)
 	_, err = gitter.Command(dir, "commit", "-a", "-m", commitMessage, "--allow-empty")
 	if err != nil {
-		return errors.Wrapf(err, "failed to commit changes in dir %s", dir)
+		return fmt.Errorf("failed to commit changes in dir %s: %w", dir, err)
 	}
 
 	remote := "origin"
 	_, err = gitter.Command(dir, "push", remote)
 	if err != nil {
-		return errors.Wrapf(err, "failed to push to remote %s from dir %s", remote, dir)
+		return fmt.Errorf("failed to push to remote %s from dir %s: %w", remote, dir, err)
 	}
 
 	gitInfo, err := giturl.ParseGitURL(gitURL)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse git URL")
+		return fmt.Errorf("failed to parse git URL: %w", err)
 	}
 
 	serverURL := gitInfo.HostURLWithoutUser()
@@ -211,7 +211,7 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 	if scmClient == nil {
 		scmClient, _, err = o.CreateScmClient(serverURL, owner, kind)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create SCM client for %s", gitURL)
+			return fmt.Errorf("failed to create SCM client for %s: %w", gitURL, err)
 		}
 	}
 	o.ScmClient = scmClient
@@ -232,7 +232,7 @@ func (o *EnvFactory) CreatePullRequest(dir, gitURL, kind, branchName, commitTitl
 	repoFullName := scm.Join(gitInfo.Organisation, gitInfo.Name)
 	pr, _, err := scmClient.PullRequests.Create(ctx, repoFullName, pri)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create PullRequest on %s", gitURL)
+		return fmt.Errorf("failed to create PullRequest on %s: %w", gitURL, err)
 	}
 
 	// the URL should not really end in .diff - fix in go-scm

@@ -18,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/spf13/cobra"
@@ -184,7 +183,7 @@ func (o *Options) Run() error {
 		if o.DevGitKind == "" {
 			o.DevGitKind = giturl.SaasGitKind(o.DevGitURL)
 			if o.DevGitKind == "" {
-				return errors.Errorf("missing git kind option: --dev-git-kind")
+				return fmt.Errorf("missing git kind option: --dev-git-kind")
 			}
 		}
 	}
@@ -196,23 +195,23 @@ func (o *Options) Run() error {
 
 	err = reqhelpers.OverrideRequirements(o.Cmd, o.Args, dir, o.RequirementsFile, &o.Requirements.Spec, &o.Flags, o.Environment)
 	if err != nil {
-		return errors.Wrapf(err, "failed to override requirements in dir %s", dir)
+		return fmt.Errorf("failed to override requirements in dir %s: %w", dir, err)
 	}
 
 	log.Logger().Infof("created git source at %s", termcolor.ColorInfo(dir))
 
 	_, err = gitclient.AddAndCommitFiles(o.Gitter, dir, "fix: initial code")
 	if err != nil {
-		return errors.Wrap(err, "failed to add files to git")
+		return fmt.Errorf("failed to add files to git: %w", err)
 	}
 	err = o.EnvFactory.CreateDevEnvGitRepository(dir, o.Flags.EnvironmentGitPublic)
 	if err != nil {
-		return errors.Wrap(err, "failed to create the environment git repository")
+		return fmt.Errorf("failed to create the environment git repository: %w", err)
 	}
 	if o.DevGitURL != "" {
 		err = o.createPullRequestOnDevRepository(o.DevGitURL, o.DevGitKind)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create Pull Request on dev repository")
+			return fmt.Errorf("failed to create Pull Request on dev repository: %w", err)
 		}
 	}
 	if o.NoOperator {
@@ -221,7 +220,7 @@ func (o *Options) Run() error {
 	if !o.BatchMode {
 		flag, err := o.GetInput().Confirm("do you want to install the git operator into the cluster?", true, "the jx-git-operator is used to install/upgrade the components in the cluster via GitOps")
 		if err != nil {
-			return errors.Wrapf(err, "failed to get confirmation of jx-git-operator install")
+			return fmt.Errorf("failed to get confirmation of jx-git-operator install: %w", err)
 		}
 		if !flag {
 			return nil
@@ -251,12 +250,12 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 	if dir != "" {
 		err = os.MkdirAll(dir, files.DefaultDirWritePermissions)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to create directory %s", dir)
+			return "", fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	} else {
 		dir, err = os.MkdirTemp("", "helmboot-")
 		if err != nil {
-			return "", errors.Wrap(err, "failed to create temporary directory")
+			return "", fmt.Errorf("failed to create temporary directory: %w", err)
 		}
 	}
 
@@ -268,15 +267,15 @@ func (o *Options) gitCloneIfRequired(gitter gitclient.Interface) (string, error)
 func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
 	cr := o.CreatedRepository
 	if cr == nil {
-		return errors.Errorf("no CreatedRepository available")
+		return fmt.Errorf("no CreatedRepository available")
 	}
 	dir, err := gitclient.CloneToDir(o.Gitter, gitURL, "")
 	if err != nil {
-		return errors.Wrapf(err, "failed to clone repository %s to directory: %s", gitURL, dir)
+		return fmt.Errorf("failed to clone repository %s to directory: %s: %w", gitURL, dir, err)
 	}
 	requirementsResource, fileName, err := jxcore.LoadRequirementsConfig(dir, false)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load requirements file in git clone of %s in  directory: %s", gitURL, dir)
+		return fmt.Errorf("failed to load requirements file in git clone of %s in  directory: %s: %w", gitURL, dir, err)
 	}
 
 	envKey := o.Environment
@@ -302,7 +301,7 @@ func (o *Options) createPullRequestOnDevRepository(gitURL, kind string) error {
 
 	err = requirementsResource.SaveConfig(fileName)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save modified requirements file: %s", fileName)
+		return fmt.Errorf("failed to save modified requirements file: %s: %w", fileName, err)
 	}
 
 	// TODO do we need to git add?
@@ -331,7 +330,7 @@ func (o *Options) installGitOperator(dir string) error {
 	op.GitToken = o.ScmClientFactory.GitToken
 	err := op.Run()
 	if err != nil {
-		return errors.Wrapf(err, "failed to install the git operator")
+		return fmt.Errorf("failed to install the git operator: %w", err)
 	}
 	log.Logger().Infof("installed the git operator into namespace %s", termcolor.ColorInfo(op.Namespace))
 	return nil

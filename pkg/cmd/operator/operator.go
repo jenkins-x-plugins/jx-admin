@@ -25,7 +25,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -145,13 +145,13 @@ func (o *Options) Run() error {
 	if o.GitURL == "" {
 		o.GitURL, err = findGitURLFromDir(o.Dir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to detect the git URL from the directory %s", o.Dir)
+			return fmt.Errorf("failed to detect the git URL from the directory %s: %w", o.Dir, err)
 		}
 	}
 	if o.GitURL != "" {
 		o.GitURL, err = o.ensureValidGitURL(o.GitURL)
 		if err != nil {
-			return errors.Wrapf(err, "failed to ensure the git URL is valid")
+			return fmt.Errorf("failed to ensure the git URL is valid: %w", err)
 		}
 	}
 	if o.HelmBin == "" {
@@ -161,7 +161,7 @@ func (o *Options) Run() error {
 		}
 	}
 	if o.HelmBin == "" {
-		return errors.Errorf("no helm binary found")
+		return fmt.Errorf("no helm binary found")
 	}
 
 	// lets add helm repository for jx-labs
@@ -171,7 +171,7 @@ func (o *Options) Run() error {
 	h := o.Helmer
 	_, err = helmer.AddHelmRepoIfMissing(h, helmer.JX3ChartRepository, "jxgh", "", "")
 	if err != nil {
-		return errors.Wrap(err, "failed to add Jenkins X github chart repository")
+		return fmt.Errorf("failed to add Jenkins X github chart repository: %w", err)
 	}
 	log.Logger().Debugf("updating helm repositories")
 	err = h.UpdateRepo()
@@ -207,12 +207,12 @@ func (o *Options) Run() error {
 
 	_, err = o.CommandRunner(c)
 	if err != nil {
-		return errors.Wrapf(err, "failed to run command %s", commandLine)
+		return fmt.Errorf("failed to run command %s: %w", commandLine, err)
 	}
 
 	err = o.switchNamespace(o.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "failed to switch the kubernetes namespace")
+		return fmt.Errorf("failed to switch the kubernetes namespace: %w", err)
 	}
 
 	if o.NoLog {
@@ -221,7 +221,7 @@ func (o *Options) Run() error {
 	o.JobLogOptions.WaitMode = true
 	err = o.JobLogOptions.Run()
 	if err != nil {
-		return errors.Wrapf(err, "failed to tail the Jenkins X boot Job pods")
+		return fmt.Errorf("failed to tail the Jenkins X boot Job pods: %w", err)
 	}
 	return nil
 }
@@ -295,7 +295,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 
 	u, err := url.Parse(answer)
 	if err != nil {
-		return answer, errors.Wrapf(err, "failed to parse git URL %s", answer)
+		return answer, fmt.Errorf("failed to parse git URL %s: %w", answer, err)
 	}
 
 	// lets check if we've already got a user and password
@@ -325,7 +325,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			i := survey.NewInput()
 			o.GitUserName, err = i.PickValue("Enter Bot Git username the Kubernetes operator will use to clone the environment git repository", "", true, "The Kubernetes Git Operator synchronises the environment git repository into the cluster")
 			if err != nil {
-				return answer, errors.Wrap(err, "failed to get git username")
+				return answer, fmt.Errorf("failed to get git username: %w", err)
 			}
 		}
 	}
@@ -339,7 +339,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 	if o.GitToken == "" {
 		requirements, _, err := jxcore.LoadRequirementsConfig(o.Dir, false)
 		if err != nil {
-			return answer, errors.Wrapf(err, "cannot load requirements file in dir %s so cannot determine git kind", o.Dir)
+			return answer, fmt.Errorf("cannot load requirements file in dir %s so cannot determine git kind: %w", o.Dir, err)
 		}
 		giturl.PrintCreateRepositoryGenerateAccessToken(requirements.Spec.Cluster.GitKind, requirements.Spec.Cluster.GitServer, o.GitUserName, os.Stdout)
 
@@ -347,7 +347,7 @@ func (o *Options) ensureValidGitURL(gitURL string) (string, error) {
 			i := survey.NewInput()
 			o.GitToken, err = i.PickPassword("Enter Bot Git token the Kubernetes operator will use to clone the environment git repository", "The Kubernetes Git Operator synchronises the environment git repository into the cluster, the token only requires read repository permissions and the token is stored in a Kubernetes secrets the job access")
 			if err != nil {
-				return answer, errors.Wrap(err, "failed to get git password")
+				return answer, fmt.Errorf("failed to get git password: %w", err)
 			}
 		} else {
 			return answer, options.MissingOption("token")
@@ -364,7 +364,7 @@ func (o *Options) switchNamespace(ns string) error {
 	}
 	cfg, pathOptions, err := kubeclient.LoadConfig()
 	if err != nil {
-		return errors.Wrap(err, "loading Kubernetes configuration")
+		return fmt.Errorf("loading Kubernetes configuration: %w", err)
 	}
 	ctx := kube.CurrentContext(cfg)
 	if ctx == nil {
@@ -378,7 +378,7 @@ func (o *Options) switchNamespace(ns string) error {
 	ctx.Namespace = ns
 	err = clientcmd.ModifyConfig(pathOptions, *cfg, false)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update the kube config to namepace %s", ns)
+		return fmt.Errorf("failed to update the kube config to namepace %s: %w", ns, err)
 	}
 	log.Logger().Infof("switched to namespace %s so that you can start to create or import projects into Jenkins X: https://jenkins-x.io/docs/v3/create-project/", termcolor.ColorInfo(ns))
 	return nil
@@ -387,7 +387,7 @@ func (o *Options) switchNamespace(ns string) error {
 func findGitURLFromDir(dir string) (string, error) {
 	_, gitConfDir, err := gitclient.FindGitConfigDir(dir)
 	if err != nil {
-		return "", errors.Wrapf(err, "there was a problem obtaining the git config dir of directory %s", dir)
+		return "", fmt.Errorf("there was a problem obtaining the git config dir of directory %s: %w", dir, err)
 	}
 	if gitConfDir == "" {
 		return "", nil

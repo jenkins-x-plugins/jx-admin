@@ -1,6 +1,7 @@
 package upgrade
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 )
 
@@ -54,7 +55,7 @@ func (o *Options) Run() error {
 	log.Logger().Infof("checking we have the correct vault CLI version")
 	bin, err := plugins.GetHelmBinary("")
 	if err != nil {
-		return errors.Wrapf(err, "failed to check vault binary")
+		return fmt.Errorf("failed to check vault binary: %w", err)
 	}
 
 	if o.BinDir != "" {
@@ -65,7 +66,7 @@ func (o *Options) Run() error {
 		}
 		err = os.Symlink(bin, f)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create symlink from %s to %s", bin, f)
+			return fmt.Errorf("failed to create symlink from %s to %s: %w", bin, f, err)
 		}
 	}
 	return nil

@@ -2,11 +2,12 @@ package bootjobs
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/stringhelpers"
-	"github.com/pkg/errors"
+
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,7 @@ func GetSortedJobs(client kubernetes.Interface, ns, selector, commitSHA string) 
 		LabelSelector: selector,
 	})
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "failed to list jobList in namespace %s selector %s", ns, selector)
+		return nil, fmt.Errorf("failed to list jobList in namespace %s selector %s: %w", ns, selector, err)
 	}
 
 	answer := jobList.Items
@@ -59,8 +60,8 @@ func FindGitOperatorNamespace(client kubernetes.Interface, namespace string) (st
 			return ns, nil
 		}
 		if !apierrors.IsNotFound(err) {
-			return ns, errors.Wrapf(err, "failed to find Deployment %s in namespace %s", name, ns)
+			return ns, fmt.Errorf("failed to find Deployment %s in namespace %s: %w", name, ns, err)
 		}
 	}
-	return namespace, errors.Errorf("failed to find Deployment %s in namespaces %s", name, strings.Join(namespaces, ", "))
+	return namespace, fmt.Errorf("failed to find Deployment %s in namespaces %s", name, strings.Join(namespaces, ", "))
 }

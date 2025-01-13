@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/stringhelpers"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 )
 
@@ -54,14 +54,14 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	if customRequirementsFile != "" {
 		exists, err := files.FileExists(customRequirementsFile)
 		if err != nil {
-			return errors.Wrapf(err, "failed to check if file exists: %s", customRequirementsFile)
+			return fmt.Errorf("failed to check if file exists: %s: %w", customRequirementsFile, err)
 		}
 		if !exists {
 			return fmt.Errorf("custom requirements file %s does not exist", customRequirementsFile)
 		}
 		requirementsResource, err = jxcore.LoadRequirementsConfigFile(customRequirementsFile, false)
 		if err != nil {
-			return errors.Wrapf(err, "failed to load: %s", customRequirementsFile)
+			return fmt.Errorf("failed to load: %s: %w", customRequirementsFile, err)
 		}
 
 	}
@@ -89,7 +89,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 
 	err = cmd.Flags().Parse(args)
 	if err != nil {
-		return errors.Wrap(err, "failed to reparse arguments")
+		return fmt.Errorf("failed to reparse arguments: %w", err)
 	}
 
 	outputRequirements, err = applyDefaults(cmd, outputRequirements, flags)
@@ -136,7 +136,7 @@ func OverrideRequirements(cmd *cobra.Command, args []string, dir, customRequirem
 	requirementsResource.Spec = *outputRequirements
 	err = requirementsResource.SaveConfig(fileName)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save %s", fileName)
+		return fmt.Errorf("failed to save %s: %w", fileName, err)
 	}
 
 	log.Logger().Infof("saved file: %s", termcolor.ColorInfo(fileName))

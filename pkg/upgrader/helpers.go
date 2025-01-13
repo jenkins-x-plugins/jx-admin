@@ -9,7 +9,7 @@ import (
 	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
-	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -17,7 +17,7 @@ import (
 func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceRepositoryList) ([]string, error) {
 	exists, err := files.DirExists(outDir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if output dir exists %s", outDir)
+		return nil, fmt.Errorf("failed to check if output dir exists %s: %w", outDir, err)
 	}
 	if !exists {
 		return nil, fmt.Errorf("output dir %s does not exist", outDir)
@@ -35,13 +35,13 @@ func WriteSourceRepositoriesToGitFolder(outDir string, srList *v1.SourceReposito
 
 		data, err := yaml.Marshal(&sr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to YAML", sr.Name)
+			return nil, fmt.Errorf("failed to marshal SourceRepository %s to YAML: %w", sr.Name, err)
 		}
 
 		fileName := filepath.Join(outDir, sr.Name+".yaml")
 		err = os.WriteFile(fileName, data, files.DefaultFileWritePermissions)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to write file %s for SourceRepository %s to YAML", fileName, sr.Name)
+			return nil, fmt.Errorf("failed to write file %s for SourceRepository %s to YAML: %w", fileName, sr.Name, err)
 		}
 	}
 	return nil, nil
