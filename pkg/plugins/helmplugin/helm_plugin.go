@@ -1,9 +1,10 @@
 package helmplugin
 
 import (
+	"fmt"
+
 	"github.com/jenkins-x-plugins/jx-admin/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/helmer"
-	"github.com/pkg/errors"
 )
 
 // GetHelm3Binary returns the location of the helm 3 binary
@@ -15,7 +16,7 @@ func GetHelm3Binary() (string, error) {
 func NewHelm3Helmer(cwd string) (*helmer.HelmCLI, error) {
 	helmBin, err := plugins.GetHelmBinary(plugins.HelmVersion)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find helm binary")
+		return nil, fmt.Errorf("failed to find helm binary: %w", err)
 	}
 	return NewHelmer(helmBin, cwd), nil
 }

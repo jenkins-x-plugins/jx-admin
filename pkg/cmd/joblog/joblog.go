@@ -2,6 +2,7 @@ package joblog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -24,7 +25,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	logger "github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +78,7 @@ func bashExample(cli string) string {
 
 // NewCmdJobLog creates the new command
 func NewCmdJobLog() (*cobra.Command, *Options) {
-	options := &Options{}
+	o := &Options{}
 	command := &cobra.Command{
 		Use:     "log",
 		Short:   "views the boot Job logs in the cluster",
@@ -85,23 +86,23 @@ func NewCmdJobLog() (*cobra.Command, *Options) {
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(command *cobra.Command, args []string) {
-			err := options.Run()
+			err := o.Run()
 			helper.CheckErr(err)
 		},
 	}
-	command.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
-	command.Flags().StringVarP(&options.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
-	command.Flags().StringVarP(&options.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
-	command.Flags().StringVarP(&options.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
-	command.Flags().StringVarP(&options.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
-	command.Flags().BoolVarP(&options.WaitMode, "wait", "w", false, "wait for the next active Job to start")
-	command.Flags().BoolVarP(&options.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
-	command.Flags().DurationVarP(&options.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
-	command.Flags().DurationVarP(&options.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
+	command.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "the namespace where the boot jobs run. If not specified it will look in: jx-git-operator and jx")
+	command.Flags().StringVarP(&o.JobSelector, "selector", "s", "app=jx-boot", "the selector of the boot Job pods")
+	command.Flags().StringVarP(&o.GitOperatorSelector, "git-operator-selector", "g", "app=jx-git-operator", "the selector of the git operator pod")
+	command.Flags().StringVarP(&o.ContainerName, "container", "c", "job", "the name of the container in the boot Job to log")
+	command.Flags().StringVarP(&o.CommitSHA, "commit-sha", "", "", "the git commit SHA of the git repository to query the boot Job for")
+	command.Flags().BoolVarP(&o.WaitMode, "wait", "w", false, "wait for the next active Job to start")
+	command.Flags().BoolVarP(&o.ShaMode, "sha-mode", "", false, "if --commit-sha is not specified then default the git commit SHA from $ and fail if it could not be found")
+	command.Flags().DurationVarP(&o.Duration, "duration", "d", time.Minute*30, "how long to wait for a Job to be active and a Pod to be ready")
+	command.Flags().DurationVarP(&o.PollPeriod, "poll", "", time.Second*1, "duration between polls for an active Job or Pod")
 
-	options.BaseOptions.AddBaseFlags(command)
+	o.BaseOptions.AddBaseFlags(command)
 
-	return command, options
+	return command, o
 }
 
 func (o *Options) Run() error {
@@ -116,19 +117,19 @@ func (o *Options) Run() error {
 
 	ns, err := bootjobs.FindGitOperatorNamespace(client, o.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find the git operator namespace")
+		return fmt.Errorf("failed to find the git operator namespace: %w", err)
 	}
 
-	jobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
+	sortedJobs, err := bootjobs.GetSortedJobs(client, ns, selector, o.CommitSHA)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get jobs")
+		return fmt.Errorf("failed to get jobs: %w", err)
 	}
 
-	if !o.WaitMode && len(jobs) <= 1 {
-		if len(jobs) == 0 {
+	if !o.WaitMode && len(sortedJobs) <= 1 {
+		if len(sortedJobs) == 0 {
 			o.WaitMode = true
 		} else {
-			j := jobs[0]
+			j := sortedJobs[0]
 			if j.Status.Active > 0 {
 				o.WaitMode = true
 			}
@@ -137,11 +138,11 @@ func (o *Options) Run() error {
 	if o.WaitMode {
 		err = o.waitForGitOperator(client, ns, selector)
 		if err != nil {
-			return errors.Wrapf(err, "failed to wait for git operator")
+			return fmt.Errorf("failed to wait for git operator: %w", err)
 		}
 		return o.waitForActiveJob(client, ns, selector, info, containerName)
 	}
-	return o.pickJobToLog(client, ns, selector, jobs)
+	return o.pickJobToLog(client, ns, selector, sortedJobs)
 }
 
 func (o *Options) waitForGitOperator(client kubernetes.Interface, ns, selector string) error {
@@ -150,7 +151,7 @@ func (o *Options) waitForGitOperator(client kubernetes.Interface, ns, selector s
 
 	goPod, err := pods.WaitForPodSelectorToBeReady(client, ns, o.GitOperatorSelector, o.Duration)
 	if err != nil {
-		return errors.Wrapf(err, "failed waiting for the git operator pod to be ready in namespace %s with selector %s", ns, o.GitOperatorSelector)
+		return fmt.Errorf("failed waiting for the git operator pod to be ready in namespace %s with selector %s: %w", ns, o.GitOperatorSelector, err)
 	}
 	if goPod == nil {
 		logger.Logger().Infof(`Could not find the git operator. 
@@ -160,7 +161,7 @@ Are you sure you have installed the git operator?
 See: https://jenkins-x.io/docs/v3/guides/operator/
 
 `)
-		return errors.Wrapf(err, "no git operator pod to be ready in namespace %s with selector %s", ns, o.GitOperatorSelector)
+		return fmt.Errorf("no git operator pod to be ready in namespace %s with selector %s: %w", ns, o.GitOperatorSelector, err)
 	}
 	logger.Logger().Infof("the Git Operator is running in pod %s\n\n", info(goPod.Name))
 
@@ -176,7 +177,7 @@ See: https://jenkins-x.io/docs/v3/guides/operator/
 func (o *Options) waitForActiveJob(client kubernetes.Interface, ns, selector string, info func(a ...interface{}) string, containerName string) error {
 	job, err := o.waitForLatestJob(client, ns, selector)
 	if err != nil {
-		return errors.Wrapf(err, "failed to wait for active Job in namespace %s with selector %v", ns, selector)
+		return fmt.Errorf("failed to wait for active Job in namespace %s with selector %v: %w", ns, selector, err)
 	}
 
 	logger.Logger().Infof("waiting for Job %s to complete...", info(job.Name))
@@ -195,11 +196,11 @@ func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns, selector, co
 			return nil
 		}
 		if pod == nil {
-			return errors.Errorf("No pod found for namespace %s with selector %v", ns, selector)
+			return fmt.Errorf("No pod found for namespace %s with selector %v", ns, selector)
 		}
 
 		if time.Now().After(o.timeEnd) {
-			return errors.Errorf("timed out after waiting for duration %s", o.Duration.String())
+			return fmt.Errorf("timed out after waiting for duration %s", o.Duration.String())
 		}
 
 		// lets verify the container name
@@ -219,7 +220,7 @@ func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns, selector, co
 		}
 		pod, err = client.CoreV1().Pods(ns).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to get pod %s in namespace %s", podName, ns)
+			return fmt.Errorf("failed to get pod %s in namespace %s: %w", podName, ns, err)
 		}
 		if pods.IsPodCompleted(pod) {
 			if pods.IsPodSucceeded(pod) {
@@ -242,10 +243,9 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 		err = nil
 	}
 	if err != nil {
-		return errors.Wrapf(err, "failed to list pods in namespace %s with selector %s", ns, selector)
+		return fmt.Errorf("failed to list pods in namespace %s with selector %s: %w", ns, selector, err)
 	}
 
-	var answer error
 	pos := podList.Items
 	// Sort pods in creation time order
 	sort.Slice(pos, func(i, j int) bool {
@@ -266,7 +266,7 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 		}
 		err = pods.WaitforPodNameCondition(client, ns, pod.Name, o.Duration, condition)
 		if err != nil {
-			return errors.Wrapf(err, "failed to wait for pod %s to be running", pod.Name)
+			return fmt.Errorf("failed to wait for pod %s to be running: %w", pod.Name, err)
 		}
 		podName := pod.Name
 		logger.Logger().Infof("\ntailing boot Job pod %s created %s\n\n", info(podName), info(pod.CreationTimestamp))
@@ -277,22 +277,32 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 		}
 		pod, err = client.CoreV1().Pods(ns).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to get pod %s in namespace %s", podName, ns)
+			return fmt.Errorf("failed to get pod %s in namespace %s: %w", podName, ns, err)
 		}
 		if pods.IsPodCompleted(pod) {
 			if pods.IsPodSucceeded(pod) {
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), info("Succeeded"))
 			} else {
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), termcolor.ColorError(string(pod.Status.Phase)))
-				if answer == nil {
-					answer = errors.Errorf("boot Job pod %s has %s", podName, string(pod.Status.Phase))
-				}
 			}
 		} else if pod.DeletionTimestamp != nil {
 			logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorWarning("Terminating"))
 		}
 	}
-	return answer
+	// If job is active return error if latest pod has failed
+	if !jobs.IsJobFinished(job) && len(pos) > 0 {
+		pod := &pos[len(pos)-1]
+		if !pods.IsPodSucceeded(pod) {
+			return fmt.Errorf("boot Job pod %s has %s", pod.Name, string(pod.Status.Phase))
+		}
+	} else if !jobs.IsJobSucceeded(job) {
+		if len(job.Status.Conditions) > 0 {
+			// If job is finished return error if job has failed
+			return errors.New(job.Status.Conditions[0].Message)
+		}
+	}
+
+	return nil
 }
 
 // Validate verifies the settings are correct and we can lazy create any required resources
@@ -309,19 +319,19 @@ func (o *Options) Validate() error {
 	if o.ShaMode && o.CommitSHA == "" {
 		o.CommitSHA = os.Getenv("PULL_BASE_SHA")
 		if o.ShaMode && o.CommitSHA == "" {
-			return errors.Errorf("you have specified --sha-mode but no $PULL_BASE_SHA is defined or --commit-sha option supplied")
+			return fmt.Errorf("you have specified --sha-mode but no $PULL_BASE_SHA is defined or --commit-sha option supplied")
 		}
 	}
 
 	var err error
 	o.KubeClient, err = kube.LazyCreateKubeClientWithMandatory(o.KubeClient, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 	if o.Namespace == "" {
 		o.Namespace, err = kubeclient.CurrentNamespace()
 		if err != nil {
-			return errors.Wrapf(err, "failed to detect current namespace. Try supply --namespace")
+			return fmt.Errorf("failed to detect current namespace. Try supply --namespace: %w", err)
 		}
 	}
 	if o.Input == nil {
@@ -334,7 +344,7 @@ func (o *Options) waitForLatestJob(client kubernetes.Interface, ns, selector str
 	for {
 		job, err := o.getLatestJob(client, ns, selector)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to ")
+			return nil, fmt.Errorf("failed to : %w", err)
 		}
 
 		if job != nil {
@@ -344,7 +354,7 @@ func (o *Options) waitForLatestJob(client kubernetes.Interface, ns, selector str
 		}
 
 		if time.Now().After(o.timeEnd) {
-			return nil, errors.Errorf("timed out after waiting for duration %s", o.Duration.String())
+			return nil, fmt.Errorf("timed out after waiting for duration %s", o.Duration.String())
 		}
 		time.Sleep(o.PollPeriod)
 	}
@@ -358,18 +368,18 @@ func (o *Options) waitForJobCompleteOrPodRunning(client kubernetes.Interface, ns
 	for {
 		complete, job, err := o.checkIfJobComplete(client, ns, jobName)
 		if err != nil {
-			return false, nil, errors.Wrapf(err, "failed to check for Job %s complete", jobName)
+			return false, nil, fmt.Errorf("failed to check for Job %s complete: %w", jobName, err)
 		}
 		if complete {
 			if job != nil && !jobs.IsJobSucceeded(job) {
-				return true, nil, errors.Errorf("job %s failed", jobName)
+				return true, nil, fmt.Errorf("job %s failed", jobName)
 			}
 			return true, nil, nil
 		}
 
 		pod, err := pods.GetReadyPodForSelector(client, ns, selector)
 		if err != nil {
-			return false, pod, errors.Wrapf(err, "failed to query ready pod in namespace %s with selector %s", ns, selector)
+			return false, pod, fmt.Errorf("failed to query ready pod in namespace %s with selector %s: %w", ns, selector, err)
 		}
 		if pod != nil {
 			status := pods.PodStatus(pod)
@@ -383,7 +393,7 @@ func (o *Options) waitForJobCompleteOrPodRunning(client kubernetes.Interface, ns
 		}
 
 		if time.Now().After(o.timeEnd) {
-			return false, nil, errors.Errorf("timed out after waiting for duration %s", o.Duration.String())
+			return false, nil, fmt.Errorf("timed out after waiting for duration %s", o.Duration.String())
 		}
 		time.Sleep(o.PollPeriod)
 	}
@@ -394,7 +404,7 @@ func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string)
 		LabelSelector: selector,
 	})
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "failed to list jobList in namespace %s selector %s", ns, selector)
+		return nil, fmt.Errorf("failed to list jobList in namespace %s selector %s: %w", ns, selector, err)
 	}
 	if len(jobList.Items) == 0 {
 		return nil, nil
@@ -427,7 +437,7 @@ func (o *Options) getLatestJob(client kubernetes.Interface, ns, selector string)
 func (o *Options) checkIfJobComplete(client kubernetes.Interface, ns, name string) (bool, *batchv1.Job, error) {
 	job, err := client.BatchV1().Jobs(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if job == nil || err != nil {
-		return false, nil, errors.Wrapf(err, "failed to list jobList in namespace %s name %s", ns, name)
+		return false, nil, fmt.Errorf("failed to list jobList in namespace %s name %s: %w", ns, name, err)
 	}
 	if jobs.IsJobFinished(job) {
 		if jobs.IsJobSucceeded(job) {
@@ -453,14 +463,14 @@ func (o *Options) pickJobToLog(client kubernetes.Interface, ns, selector string,
 
 	name, err := o.Input.PickNameWithDefault(names, "select the Job to view:", "", "select which boot Job you wish to log")
 	if err != nil {
-		return errors.Wrapf(err, "failed to pick a boot job name")
+		return fmt.Errorf("failed to pick a boot job name: %w", err)
 	}
 	if name == "" {
-		return errors.Errorf("no boot Jobs to view. Try add --active to wait for the next boot job")
+		return fmt.Errorf("no boot Jobs to view. Try add --active to wait for the next boot job")
 	}
 	job := m[name]
 	if job == nil {
-		return errors.Errorf("cannot find Job %s", name)
+		return fmt.Errorf("cannot find Job %s", name)
 	}
 	return o.viewJobLog(client, ns, selector, o.ContainerName, job)
 }
@@ -497,5 +507,5 @@ func verifyContainerName(pod *corev1.Pod, name string) error {
 		names = append(names, pod.Spec.Containers[i].Name)
 	}
 	sort.Strings(names)
-	return errors.Errorf("invalid container name %s for pod %s. Available names: %s", name, pod.Name, strings.Join(names, ", "))
+	return fmt.Errorf("invalid container name %s for pod %s. Available names: %s", name, pod.Name, strings.Join(names, ", "))
 }

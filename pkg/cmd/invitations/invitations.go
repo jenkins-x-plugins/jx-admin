@@ -17,8 +17,6 @@ import (
 
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 
-	"github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
 
 	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
@@ -78,7 +76,7 @@ func (o *Options) Run() error {
 	o.ctx = context.Background()
 	botCredentials, err := loadcreds.FindOperatorCredentials()
 	if err != nil {
-		return errors.Wrapf(err, "failed to find jx operator credentials")
+		return fmt.Errorf("failed to find jx operator credentials: %w", err)
 	}
 
 	if o.Input == nil {
@@ -90,20 +88,20 @@ func (o *Options) Run() error {
 
 	o.client, _, err = scmhelpers.NewScmClient(kind, gitServerURL, botCredentials.Password, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create scm client")
+		return fmt.Errorf("failed to create scm client: %w", err)
 	}
 
 	// initially find any repository level invitations
 	repoInvites, _, err := o.client.Users.ListInvitations(o.ctx)
 	if err != nil {
-		return errors.Wrapf(err, "failed to list users invitations")
+		return fmt.Errorf("failed to list users invitations: %w", err)
 	}
 
 	// next find any organisation level invitations
 	log.Logger().Infof("checking both repository and organization invitations for bot user %s", botCredentials.Username)
 	memberships, _, err := o.client.Organizations.ListMemberships(o.ctx, &scm.ListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list team memberships")
+		return fmt.Errorf("failed to list team memberships: %w", err)
 	}
 	var orgInvites []*scm.Membership
 	for _, m := range memberships {
@@ -128,7 +126,7 @@ func (o *Options) Run() error {
 	// repo invites
 	acceptRepoInvites, err := o.pickInvitesToAccept(repoNamesToCheck, repository)
 	if err != nil {
-		return errors.Wrapf(err, "failed to accept repository invites")
+		return fmt.Errorf("failed to accept repository invites: %w", err)
 	}
 
 	var orgNamesToCheck []string
@@ -139,19 +137,19 @@ func (o *Options) Run() error {
 	// org invites
 	acceptOrgInvites, err := o.pickInvitesToAccept(orgNamesToCheck, organisation)
 	if err != nil {
-		return errors.Wrapf(err, "failed to accept organisation invites")
+		return fmt.Errorf("failed to accept organisation invites: %w", err)
 	}
 
 	// accept the selected repo invites
 	err = o.acceptRepoInvites(acceptRepoInvites)
 	if err != nil {
-		return errors.Wrapf(err, "failed to accept repository invites")
+		return fmt.Errorf("failed to accept repository invites: %w", err)
 	}
 
 	// accept the selected org invites
 	err = o.acceptOrgInvites(acceptOrgInvites)
 	if err != nil {
-		return errors.Wrapf(err, "failed to accept repository invites")
+		return fmt.Errorf("failed to accept repository invites: %w", err)
 	}
 	return nil
 }
@@ -168,7 +166,7 @@ func (o *Options) pickInvitesToAccept(namesToCheck []string, kind inviteType) ([
 	if len(namesToCheck) > 0 {
 		acceptOrgNames, err := o.Input.SelectNames(namesToCheck, "Select invites to accept", false, "")
 		if err != nil {
-			return nil, errors.Wrapf(err, "error selecting invites to accept")
+			return nil, fmt.Errorf("error selecting invites to accept: %w", err)
 		}
 
 		if acceptOrgNames == nil {
@@ -186,12 +184,12 @@ func (o *Options) acceptRepoInvites(invites []string) error {
 	}
 	reposToAccept, err := o.getInviteDetailsToAccept(invites, repository)
 	if err != nil {
-		return errors.Wrap(err, "failed to get repositories to accept")
+		return fmt.Errorf("failed to get repositories to accept: %w", err)
 	}
 	for _, r := range reposToAccept {
 		_, err = o.client.Users.AcceptInvitation(o.ctx, o.OriginalRepos[r])
 		if err != nil {
-			return errors.Wrapf(err, "failed to accept invite %d for repository %s", o.OriginalRepos[r], r)
+			return fmt.Errorf("failed to accept invite %d for repository %s: %w", o.OriginalRepos[r], r, err)
 		}
 	}
 	log.Logger().Infof("accepted invites to repositories %v", reposToAccept)
@@ -204,12 +202,12 @@ func (o *Options) acceptOrgInvites(invites []string) error {
 	}
 	orgs, err := o.getInviteDetailsToAccept(invites, organisation)
 	if err != nil {
-		return errors.Wrap(err, "failed to get organisations to accept")
+		return fmt.Errorf("failed to get organisations to accept: %w", err)
 	}
 	for _, org := range orgs {
 		_, err = o.client.Organizations.AcceptOrganizationInvitation(o.ctx, org)
 		if err != nil {
-			return errors.Wrapf(err, "failed to accept invite for organisation %s", org)
+			return fmt.Errorf("failed to accept invite for organisation %s: %w", org, err)
 		}
 	}
 	log.Logger().Infof("accept invites to organisations %v", orgs)
@@ -227,13 +225,13 @@ func (o *Options) getInviteDetailsToAccept(invites []string, kind inviteType) ([
 		case repository:
 			gitInfo, err := giturl.ParseGitURL(part2)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse git url %s", part2)
+				return nil, fmt.Errorf("failed to parse git url %s: %w", part2, err)
 			}
 			result = append(result, fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name))
 		case organisation:
 			gitInfo, err := giturl.ParseGitOrganizationURL(part2)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse git url %s", part2)
+				return nil, fmt.Errorf("failed to parse git url %s: %w", part2, err)
 			}
 			if gitInfo.Organisation == "" {
 				return nil, fmt.Errorf("failed to get git organisation from %s", part2)
