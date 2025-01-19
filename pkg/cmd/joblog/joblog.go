@@ -226,7 +226,7 @@ func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns, selector, co
 			if pods.IsPodSucceeded(pod) {
 				logger.Logger().Infof("boot Job pod %s has %s", info(podName), info("Succeeded"))
 			} else {
-				logger.Logger().Infof("boot Job pod %s has %s", info(podName), termcolor.ColorError(string(pod.Status.Phase)))
+				logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorError(string(pod.Status.Phase)))
 			}
 		} else if pod.DeletionTimestamp != nil {
 			logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorWarning("Terminating"))
@@ -235,8 +235,9 @@ func (o *Options) viewActiveJobLog(client kubernetes.Interface, ns, selector, co
 }
 
 func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containerName string, job *batchv1.Job) error {
+	jobName := job.Name
 	opts := metav1.ListOptions{
-		LabelSelector: "job-name=" + job.Name,
+		LabelSelector: "job-name=" + jobName,
 	}
 	podList, err := client.CoreV1().Pods(ns).List(context.TODO(), opts)
 	if err != nil && apierrors.IsNotFound(err) {
@@ -247,6 +248,7 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 	}
 
 	pos := podList.Items
+	var lastPod *corev1.Pod
 	// Sort pods in creation time order
 	sort.Slice(pos, func(i, j int) bool {
 		return pos[i].CreationTimestamp.Before(&pos[j].CreationTimestamp)
@@ -288,12 +290,16 @@ func (o *Options) viewJobLog(client kubernetes.Interface, ns, selector, containe
 		} else if pod.DeletionTimestamp != nil {
 			logger.Logger().Infof("boot Job pod %s is %s", info(podName), termcolor.ColorWarning("Terminating"))
 		}
+		lastPod = pod
 	}
 	// If job is active return error if latest pod has failed
-	if !jobs.IsJobFinished(job) && len(pos) > 0 {
-		pod := &pos[len(pos)-1]
-		if !pods.IsPodSucceeded(pod) {
-			return fmt.Errorf("boot Job pod %s has %s", pod.Name, string(pod.Status.Phase))
+	job, err = client.BatchV1().Jobs(ns).Get(context.TODO(), jobName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get boot Job %s: %w", jobName, err)
+	}
+	if !jobs.IsJobFinished(job) && lastPod != nil {
+		if !pods.IsPodSucceeded(lastPod) {
+			return fmt.Errorf("boot Job pod %s has %s", lastPod.Name, string(lastPod.Status.Phase))
 		}
 	} else if !jobs.IsJobSucceeded(job) {
 		if len(job.Status.Conditions) > 0 {
