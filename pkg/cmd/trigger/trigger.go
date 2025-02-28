@@ -3,9 +3,9 @@ package trigger
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
 
 	"github.com/jenkins-x-plugins/jx-admin/pkg/bootjobs"
-	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
@@ -51,7 +51,7 @@ var (
 
 // bashExample returns markdown for a bash script expression
 func bashExample(cli string) string {
-	return fmt.Sprintf("\n```bash \n%s %s\n```\n", rootcmd.BinaryName, cli)
+	return fmt.Sprintf("\n```bash \n%s %s\n```\n", common.BinaryName, cli)
 }
 
 // NewCmdJobTrigger creates the new command

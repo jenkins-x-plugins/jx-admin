@@ -3,6 +3,7 @@ package invitations
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
 	"strings"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/giturl"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/scmhelpers"
 
-	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -57,7 +57,7 @@ func NewCmdInvitations() (*cobra.Command, *Options) {
 		Aliases: []string{"invitations"},
 		Short:   "Accept bot user invitations",
 		Long:    invitationsLong,
-		Example: fmt.Sprintf(invitationsExample, rootcmd.BinaryName),
+		Example: fmt.Sprintf(invitationsExample, common.BinaryName),
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Cmd = cmd
 			o.Args = args
