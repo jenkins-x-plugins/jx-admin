@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/stop"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/trigger"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/version"
-	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
+	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/spf13/cobra"
@@ -18,7 +18,9 @@ import (
 // Main creates the new command
 func Main() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   rootcmd.TopLevelCommand,
+		Annotations: map[string]string{
+			cobra.CommandDisplayNameAnnotation: common.TopLevelCommand,
+		},
 		Short: "commands for creating and upgrading Jenkins X environments using GitOps",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()

@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/envfactory"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/reqhelpers"
-	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
@@ -74,7 +73,7 @@ func NewCmdCreate() (*cobra.Command, *Options) {
 		Use:     "create",
 		Short:   "Creates a new git repository for a new Jenkins X installation",
 		Long:    createLong,
-		Example: fmt.Sprintf(createExample, rootcmd.BinaryName),
+		Example: fmt.Sprintf(createExample, common.BinaryName),
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Cmd = cmd
 			o.Args = args

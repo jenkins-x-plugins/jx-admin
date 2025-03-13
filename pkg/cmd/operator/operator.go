@@ -10,7 +10,6 @@ import (
 	"github.com/jenkins-x-plugins/jx-admin/pkg/cmd/joblog"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/common"
 	"github.com/jenkins-x-plugins/jx-admin/pkg/plugins/helmplugin"
-	"github.com/jenkins-x-plugins/jx-admin/pkg/rootcmd"
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
@@ -73,7 +72,7 @@ var (
 
 // bashExample returns markdown for a bash script expression
 func bashExample(cli string) string {
-	return fmt.Sprintf("\n```bash \n%s %s\n```\n", rootcmd.BinaryName, cli)
+	return fmt.Sprintf("\n```bash \n%s %s\n```\n", common.BinaryName, cli)
 }
 
 const (
