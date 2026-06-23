@@ -40,7 +40,7 @@ jobs:
         VERSION: ${{ steps.prep.outputs.version }}
         COSIGN_EXPERIMENTAL: "true"
       name: upload-binaries
-      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:1.0.0@sha256:35070795367fea9a789c1c3a138b5e32262e4253d38e47406ba9ab7833ff15b2
+      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:1.0.3@sha256:f304b286bf8c0995b8161172eb54ab12bcd744f89caf71fc3a91329de87a3b4f
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
     - name: Set up QEMU
